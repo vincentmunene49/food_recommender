@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "138884024097",
+    "project_id": "recommender-245fb",
+    "storage_bucket": "recommender-245fb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138884024097:android:357292d8521257aebca060",
+        "android_client_info": {
+          "package_name": "com.example.foodrecommenderapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVxT7LQTvxb1RdvqPFHjXXBoOQQqgyRgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
