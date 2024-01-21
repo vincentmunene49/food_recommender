@@ -120,7 +120,11 @@ fun RegisterScreenContent(
         uiEvent.collect { event ->
             when (event) {
                 is UiEvent.OnSuccess -> {
-                    navController.navigate(route = Route.Login.route)
+                    navController.navigate(route = Route.Login.route) {
+                        popUpTo(Route.Register.route) {
+                            inclusive = true
+                        }
+                    }
                 }
 
             }
@@ -438,7 +442,13 @@ fun RegisterScreenContent(
                         )
                         Text(
                             modifier = Modifier
-                                .clickable { navController.navigate(route = Route.Login.route) },
+                                .clickable {
+                                    navController.navigate(route = Route.Login.route) {
+                                        popUpTo(Route.Register.route) {
+                                            inclusive = true
+                                        }
+                                    }
+                                },
                             text = "Sign In",
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary

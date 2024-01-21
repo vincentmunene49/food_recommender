@@ -110,7 +110,11 @@ fun LoginScreenContent(
         uiEvent.collect {
             when (it) {
                 is UiEvent.OnSuccess -> {
-                    navController.navigate(route = Route.Home.route)
+                    navController.navigate(route = Route.Home.route){
+                        Timber.tag("NAVIGATION").d("popping back stack")
+                        navController.popBackStack(Route.Login.route, inclusive = true)
+
+                    }
                 }
 
             }
@@ -304,7 +308,10 @@ fun LoginScreenContent(
                         )
                         Text(
                             modifier = Modifier
-                                .clickable { navController.navigate(route = Route.Register.route) },
+                                .clickable { navController.navigate(route = Route.Register.route){
+                                    navController.popBackStack(Route.Login.route, inclusive = true)
+
+                                } },
                             text = "Sign Up",
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
