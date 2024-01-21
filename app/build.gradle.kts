@@ -75,6 +75,8 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore:24.10.1")
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation("com.google.firebase:firebase-auth:22.3.1")
+    //Splash Api
+    implementation ("androidx.core:core-splashscreen:1.0.1")
 
     //Timber
     implementation("com.jakewharton.timber:timber:5.0.1")

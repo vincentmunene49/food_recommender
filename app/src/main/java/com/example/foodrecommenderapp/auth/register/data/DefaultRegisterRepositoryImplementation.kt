@@ -20,14 +20,13 @@ class DefaultRegisterRepositoryImplementation @Inject constructor(
         email: String,
         password: String,
         name: String,
-        image: String,
         uid: String
     ): Flow<Resource<User>> = flow {
 
         emit(Resource.Loading())
         try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
-            val user = User(userName = name, imagePath = image, email = email)
+            val user = User(userName = name, email = email)
             if (result.user != null) {
                 firebaseFirestore.collection(USER_COLLECTION)
                     .document(uid)

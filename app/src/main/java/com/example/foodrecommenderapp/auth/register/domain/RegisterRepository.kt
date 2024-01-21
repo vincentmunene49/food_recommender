@@ -9,7 +9,6 @@ interface RegisterRepository {
         email: String,
         password: String,
         name:String,
-        image:String,
         uid: String
     ): Flow<Resource<User>>
 }

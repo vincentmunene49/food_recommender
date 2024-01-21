@@ -8,18 +8,21 @@ import androidx.lifecycle.viewModelScope
 import com.example.foodrecommenderapp.auth.register.domain.RegisterRepository
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.UiEvent
+import com.example.foodrecommenderapp.common.domain.FormValidatorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val repository: RegisterRepository
+    private val repository: RegisterRepository,
+    private val formValidator: FormValidatorRepository
 ) : ViewModel() {
 
     var state by mutableStateOf(RegisterState())
@@ -32,27 +35,38 @@ class RegisterViewModel @Inject constructor(
         when (event) {
             is RegisterEvent.OnTypeUsername -> {
                 state = state.copy(username = event.username)
+                validateUsername()
             }
 
             is RegisterEvent.OnTypeEmail -> {
                 state = state.copy(email = event.email)
+                validateEmail()
             }
 
             is RegisterEvent.OnTypePassword -> {
                 state = state.copy(password = event.password)
+                validatePassword()
             }
 
             is RegisterEvent.OnTypeConfirmPassword -> {
                 state = state.copy(confirmPassword = event.confirmPassword)
+                validateConfirmPassword()
             }
 
             is RegisterEvent.OnClickRegister -> {
-                registerUser(
-                    state.email,
-                    state.password,
-                    state.username,
-                    state.imagePath
-                )
+                val isEmailValid = validateEmail()
+                val isPasswordValid = validatePassword()
+                val isUsernameValid = validateUsername()
+                val isConfirmPasswordValid = validateConfirmPassword()
+
+                if(isEmailValid && isPasswordValid && isUsernameValid &&
+                    isConfirmPasswordValid){
+                    registerUser(
+                        state.email,
+                        state.password,
+                        state.username
+                    )
+                }
             }
 
             is RegisterEvent.OnClickToggleConfirmPasswordVisibility -> {
@@ -63,6 +77,11 @@ class RegisterViewModel @Inject constructor(
                 state = state.copy(isPasswordVisible = event.isPasswordVisible)
             }
 
+            RegisterEvent.OnDismissErrorDialog -> {
+                state = state.copy(
+                    showErrorDialog = false
+                )
+            }
         }
     }
 
@@ -70,14 +89,12 @@ class RegisterViewModel @Inject constructor(
         email: String,
         password: String,
         name: String,
-        image: String
     ) {
         viewModelScope.launch {
             repository.register(
                 email,
                 password,
                 name,
-                image,
                 UUID.randomUUID().toString()
             ).onEach {
                 when (it) {
@@ -97,6 +114,7 @@ class RegisterViewModel @Inject constructor(
                     }
 
                     is Resource.Loading -> {
+                        Timber.tag("RegisterViewModel").d("Loading")
                         state = state.copy(
                             isLoading = true,
                         )
@@ -105,5 +123,34 @@ class RegisterViewModel @Inject constructor(
             }.launchIn(this)
         }
     }
+
+
+    private fun validateEmail(): Boolean {
+        val emailResult = formValidator.validateEmail(state.email)
+        state = state.copy(emailErrorMessage = emailResult.errorMessage)
+        return emailResult.successful
+    }
+
+    private fun validatePassword(): Boolean {
+        val passwordResult = formValidator.validatePassword(state.password)
+        state = state.copy(passwordErrorMessage = passwordResult.errorMessage)
+        return passwordResult.successful
+    }
+
+    private fun validateUsername(): Boolean {
+        val usernameResult = formValidator.validateUsername(state.username)
+        state = state.copy(usernameErrorMessage = usernameResult.errorMessage)
+        return usernameResult.successful
+    }
+
+    private fun validateConfirmPassword(): Boolean {
+        val confirmPasswordResult = formValidator.validateConfirmPassword(
+            state.password,
+            state.confirmPassword
+        )
+        state = state.copy(confirmPasswordErrorMessage = confirmPasswordResult.errorMessage)
+        return confirmPasswordResult.successful
+    }
+
 
 }

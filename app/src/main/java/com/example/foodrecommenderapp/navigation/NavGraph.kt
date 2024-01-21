@@ -8,6 +8,7 @@ import com.example.foodrecommenderapp.auth.login.presentation.LoginScreen
 import com.example.foodrecommenderapp.auth.login.presentation.LoginViewModel
 import com.example.foodrecommenderapp.auth.register.presentation.RegisterScreen
 import com.example.foodrecommenderapp.auth.register.presentation.RegisterViewModel
+import com.example.foodrecommenderapp.home.presentation.HomeScreen
 
 
 @Composable
@@ -29,6 +30,12 @@ fun NavGraph() {
            LoginScreen(
                 navController = navController
            )
+        }
+
+        composable(route = Route.Home.route) {
+            HomeScreen(
+                navController = navController
+            )
         }
     }
 

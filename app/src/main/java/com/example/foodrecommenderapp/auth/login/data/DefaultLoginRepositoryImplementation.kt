@@ -31,7 +31,7 @@ class DefaultLoginRepositoryImplementation @Inject constructor(
             if (e is CancellationException) {
                 throw e
             }
-            emit(Resource.Error(e.message))
+            emit(Resource.Error("☹\uFE0F \n ${e.message}"))
         }
     }
 

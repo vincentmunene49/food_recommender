@@ -9,4 +9,6 @@ sealed class RegisterEvent {
     data class OnClickTogglePasswordVisibility(val isPasswordVisible: Boolean) : RegisterEvent()
     data class OnClickToggleConfirmPasswordVisibility(val isConfirmPasswordVisible: Boolean) :
         RegisterEvent()
+
+    object OnDismissErrorDialog : RegisterEvent()
 }

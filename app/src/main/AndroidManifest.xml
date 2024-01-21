@@ -12,12 +12,13 @@
         android:enableOnBackInvokedCallback="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.FoodRecommenderApp"
+        android:theme="@style/App.Starting.Theme"
         tools:targetApi="tiramisu">
         <activity
             android:name=".MainActivity"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true"
-            android:theme="@style/Theme.FoodRecommenderApp">
+            android:theme="@style/App.Starting.Theme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

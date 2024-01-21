@@ -4,6 +4,8 @@ import com.example.foodrecommenderapp.auth.login.data.DefaultLoginRepositoryImpl
 import com.example.foodrecommenderapp.auth.login.domain.LoginRepository
 import com.example.foodrecommenderapp.auth.register.data.DefaultRegisterRepositoryImplementation
 import com.example.foodrecommenderapp.auth.register.domain.RegisterRepository
+import com.example.foodrecommenderapp.common.data.DefaultFormValidatorRepositoryImplementation
+import com.example.foodrecommenderapp.common.domain.FormValidatorRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
@@ -38,5 +40,9 @@ object Module {
         firebaseAuth: FirebaseAuth,
         firebaseFirestore: FirebaseFirestore
     ):RegisterRepository = DefaultRegisterRepositoryImplementation(firebaseAuth, firebaseFirestore)
+
+    @Provides
+    @Singleton
+    fun provideFormValidatorRepository(): FormValidatorRepository = DefaultFormValidatorRepositoryImplementation()
 
 }
