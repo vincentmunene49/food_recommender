@@ -25,6 +25,50 @@ class HomeViewModel @Inject constructor(
     init {
         getRandomMeal()
         getMealByFirstLetter("c")
+        getMealCategories()
+    }
+
+    fun onEvent(event: HomeScreenEvents){
+        when(event){
+            is HomeScreenEvents.OnClickLaunch -> {
+                state = state.copy(
+                    showPreferencesDialog = true
+                )
+            }
+            is HomeScreenEvents.OnMealTypeChanged -> {
+                state = state.copy(
+                    mealType = event.mealType
+                )
+            }
+            is HomeScreenEvents.OnCousineTypeChanged -> {
+                state = state.copy(
+                    cousineType = event.cousineType
+                )
+            }
+            is HomeScreenEvents.OnDietTypeChanged -> {
+                state = state.copy(
+                    dietType = event.dietType
+                )
+            }
+            is HomeScreenEvents.OnAllergyTypeChanged -> {
+                state = state.copy(
+                    allergyType = event.allergyType
+                )
+            }
+            is HomeScreenEvents.OnSearchTermChanged -> {
+                state = state.copy(
+                    searchTerm = event.searchTerm
+                )
+                getMealByFirstLetter(event.searchTerm)
+            }
+
+            HomeScreenEvents.OnDismissShowPreferencesDialog ->{
+                state = state.copy(
+                    showPreferencesDialog = false
+                )
+
+            }
+        }
     }
 
 
@@ -66,6 +110,34 @@ class HomeViewModel @Inject constructor(
                         state = state.copy(
                             isLoading = false,
                             meals = it.data
+                        )
+                    }
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+
+    private fun getMealCategories() {
+        viewModelScope.launch {
+            repository.getMealCategories().onEach {
+                when(it){
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false,
+                            categories = it.data
                         )
                     }
                     is Resource.Error -> {

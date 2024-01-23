@@ -13,27 +13,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,11 +56,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
+import com.example.foodrecommenderapp.common.presentation.components.RecommenderAppTextField
+import com.example.foodrecommenderapp.home.data.model.Preferences
 import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 
 
@@ -63,16 +70,17 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     HomeScreenContent(
-        state = viewModel.state
-    )
+        state = viewModel.state,
+        onEvent = viewModel::onEvent
+        )
 
 }
 
 @Composable
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
-    state: HomeState
-
+    state: HomeState,
+    onEvent: (HomeScreenEvents) -> Unit = { },
 ) {
 
     Scaffold(
@@ -85,55 +93,175 @@ fun HomeScreenContent(
             )
 
         },
-    ) { paddingValues ->
-
-        if(state.isLoading){
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.background)
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+        floatingActionButton = {
+            IconButton(
+                onClick = { onEvent(HomeScreenEvents.OnClickLaunch) }
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        painter = painterResource(id = R.drawable.rocket_launch),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+        },
+
+        ) { paddingValues ->
+
+
+        if (state.showPreferencesDialog) {
+            PreferencesComponent(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                onDismiss = { onEvent(HomeScreenEvents.OnDismissShowPreferencesDialog) },
+                onClickOk = { onEvent(HomeScreenEvents.OnDismissShowPreferencesDialog) },
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                ) {
+
+                    RecommenderAppTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        value = state.allergyType,
+                        onValueChange = { onEvent(HomeScreenEvents.OnAllergyTypeChanged(it)) },
+                        placeholder = {
+                            Text(
+                                text = "peanut",
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "Allergy",
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                    )
+                    RecommenderAppTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        value = state.dietType,
+                        onValueChange = { onEvent(HomeScreenEvents.OnDietTypeChanged(it)) },
+                        placeholder = {
+                            Text(
+                                text = "balanced",
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "Diet Type",
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                    )
+                    RecommenderAppTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        value = state.cousineType,
+                        onValueChange = { onEvent(HomeScreenEvents.OnCousineTypeChanged(it)) },
+                        placeholder = {
+                            Text(
+                                text = "American",
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "Cousine",
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                    )
+                    RecommenderAppTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        value = state.mealType,
+                        onValueChange = { onEvent(HomeScreenEvents.OnMealTypeChanged(it)) },
+                        placeholder = {
+                            Text(
+                                text = "lunch",
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = "Meal Type",
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                    )
+                }
+
             }
         }
+
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
+            if (state.isLoading) {
+
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 30.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+            }
             SearchBoxComponent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                value = "",
-                onSearch = { /*TODO*/ },
-                onValueChange = {})
+                value = state.searchTerm,
+                onValueChange = { onEvent(HomeScreenEvents.OnSearchTermChanged(it)) },
+            )
 
             Text(
                 modifier = Modifier.padding(start = 16.dp),
-                text = "Dish of the Day",
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp),
+                text = "All Categories",
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
-            DishOfTheDayComponent(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                foodTitle = state.meals?.meals?.getOrNull(0)?.strMeal ?: "",
-                foodCategory = state.meals?.meals?.getOrNull(0)?.strCategory ?: "",
-                area = state.meals?.meals?.getOrNull(0)?.strArea ?: "",
-                imagePath = state.meals?.meals?.getOrNull(0)?.strMealThumb ?: "",
-                onClickRandomMeal = { /*TODO*/ }
-            )
+            LazyRow {
+                items(state.categories?.categories ?: emptyList()) { category ->
+                    MealComponent(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        foodCategory = category.strCategory,
+                        foodImage = category.strCategoryThumb
+                    )
+                }
+
+            }
+
             Text(
                 modifier = Modifier.padding(start = 16.dp),
-                text = "Recommended for you",
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp),
+                text = "Popular Dishes",
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
@@ -148,7 +276,7 @@ fun HomeScreenContent(
 
                 state.meals?.let { mealList ->
                     items(mealList.meals) { meal ->
-                        MealComponent(
+                        AllMealsComponent(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             onClickFood = { /*TODO*/ },
                             imagePath = meal.strMealThumb,
@@ -170,7 +298,6 @@ fun HomeScreenContent(
 fun SearchBoxComponent(
     modifier: Modifier = Modifier,
     value: String,
-    onSearch: () -> Unit,
     onValueChange: (String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -190,7 +317,7 @@ fun SearchBoxComponent(
         keyboardActions = KeyboardActions(
             onSearch = {
                 focusManager.clearFocus()
-                onSearch()
+
             }
         ),
         decorationBox = { innerTextField ->
@@ -199,7 +326,7 @@ fun SearchBoxComponent(
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
-                        shape = CircleShape
+                        shape = RoundedCornerShape(10.dp)
                     )
 
             ) {
@@ -208,7 +335,7 @@ fun SearchBoxComponent(
                 ) {
                     IconButton(
                         onClick = {
-                            onSearch()
+
                         }
                     ) {
                         Icon(
@@ -228,88 +355,8 @@ fun SearchBoxComponent(
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DishOfTheDayComponent(
-    modifier: Modifier = Modifier,
-    foodTitle: String,
-    foodCategory: String,
-    area: String,
-    imagePath: String,
-    onClickRandomMeal: () -> Unit,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        onClick = {
-            onClickRandomMeal()
-        },
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0XFF5AB45E),
-        )
-    ) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(50.dp) // Adjust the size as needed
-                        .background(color = Color(0XFF5AB45E))
-                        .clip(RoundedCornerShape(10.dp))
-                ) {
-                    AsyncImage(
-                        model = imagePath,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop, // Use Crop to ensure the image fills the circular shape
-                        placeholder = painterResource(id = R.drawable.meal)
-                    )
-                }
-
-
-                Column(
-
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Text(
-                        text = "Kick start your day with today's special",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Text(
-                        text = "Food Name: $foodTitle",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Text(
-                        text = "Food category: $foodCategory",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-
-                }
-
-
-            }
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                text = "This food is mainly originates from $area",
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 8.sp),
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-
-        }
-    }
-
-}
-
-@Composable
-fun MealComponent(
+fun AllMealsComponent(
     modifier: Modifier = Modifier,
     onClickFood: () -> Unit,
     imagePath: String,
@@ -328,7 +375,8 @@ fun MealComponent(
             Box(
                 modifier = Modifier
                     .size(150.dp) // Adjust the size as needed
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
                     model = imagePath,
@@ -358,11 +406,88 @@ fun MealComponent(
 
 }
 
+@Composable
+fun MealComponent(
+    modifier: Modifier = Modifier,
+    foodCategory: String,
+    foodImage: String,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(color = Color(0XFFF7F7F7)),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                modifier = Modifier.size(60.dp),
+                model = foodImage,
+                contentDescription = null,
+                placeholder = painterResource(id = R.drawable.meal),
+                contentScale = ContentScale.Crop
+            )
+
+        }
+        Text(
+            modifier = Modifier.padding(top = 8.dp),
+            text = foodCategory,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun PreferencesComponent(
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+    onClickOk: () -> Unit,
+    content: @Composable () -> Unit = {}
+
+) {
+
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+
+
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    text = "Preferences",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                content()
+                Button(onClick = { onClickOk() }) {
+                    Text(
+                        text = "OK",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+
+        }
+    }
+
+
+}
+
+
 @Preview
 @Composable
 fun PreviewHomeScreen() {
     FoodRecommenderAppTheme {
-        HomeScreenContent(state = HomeState())
+        HomeScreenContent(state = HomeState(), onEvent = {})
     }
 
 }

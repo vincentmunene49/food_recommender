@@ -1,6 +1,7 @@
 package com.example.foodrecommenderapp.home.data
 
 import com.example.foodrecommenderapp.common.Resource
+import com.example.foodrecommenderapp.home.data.model.Category
 import com.example.foodrecommenderapp.home.data.model.Meal
 import com.example.foodrecommenderapp.home.data.network.ApiService
 import com.example.foodrecommenderapp.home.domain.HomeRepository
@@ -32,6 +33,19 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
             try {
                 val response =
                     apiService.getMealsByFirstLetter(searchTerm)
+                emit(Resource.Success(response))
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    override suspend fun getMealCategories(): Flow<Resource<Category>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                val response =
+                    apiService.getCategories()
                 emit(Resource.Success(response))
             } catch (e: Exception) {
                 emit(Resource.Error(e.message ?: "An error occurred"))
