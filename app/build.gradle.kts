@@ -67,7 +67,7 @@ dependencies {
     //hilt
     implementation("com.google.dagger:hilt-android:2.45")
     kapt("com.google.dagger:hilt-compiler:2.45")
-    implementation ("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
     //navigation
     implementation("androidx.navigation:navigation-compose:2.7.6")
@@ -76,10 +76,16 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation("com.google.firebase:firebase-auth:22.3.1")
     //Splash Api
-    implementation ("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     //Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
+    //coil
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    //retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.google.code.gson:gson:2.8.7")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
