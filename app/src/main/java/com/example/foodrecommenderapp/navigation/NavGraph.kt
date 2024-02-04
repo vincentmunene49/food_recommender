@@ -1,14 +1,22 @@
 package com.example.foodrecommenderapp.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.example.foodrecommenderapp.auth.login.presentation.LoginScreen
 import com.example.foodrecommenderapp.auth.login.presentation.LoginViewModel
 import com.example.foodrecommenderapp.auth.register.presentation.RegisterScreen
 import com.example.foodrecommenderapp.auth.register.presentation.RegisterViewModel
 import com.example.foodrecommenderapp.home.presentation.HomeScreen
+import com.example.foodrecommenderapp.home.presentation.HomeSharedViewModel
+import com.example.foodrecommenderapp.preference.presentation.PreferenceScreen
 
 
 @Composable
@@ -27,16 +35,47 @@ fun NavGraph() {
             )
         }
         composable(route = Route.Login.route) {
-           LoginScreen(
+
+            LoginScreen(
                 navController = navController
-           )
+            )
         }
 
-        composable(route = Route.Home.route) {
-            HomeScreen()
+        navigation(
+            route = Route.Content.route,
+            startDestination = Route.Home.route
+        ) {
+            composable(route = Route.Home.route) {
+                val viewModel = it.sharedViewModel<HomeSharedViewModel>(navController = navController)
+
+                HomeScreen(
+                    viewModel = viewModel,
+                    navController = navController
+                )
+            }
+
+            composable(route = Route.Preference.route) {
+                val viewModel = it.sharedViewModel<HomeSharedViewModel>(navController = navController)
+                PreferenceScreen(
+                    viewModel = viewModel,
+                    navController = navController
+                )
+            }
         }
+
 
     }
 
 
+}
+
+@Composable
+inline fun <reified T : ViewModel> NavBackStackEntry.sharedViewModel(
+    navController: NavHostController,
+): T {
+    val navGraphRoute = destination.parent?.route ?: return hiltViewModel()
+    val parentEntry = remember(this) {
+        navController.getBackStackEntry(navGraphRoute)
+    }
+    return hiltViewModel(parentEntry)
 }
