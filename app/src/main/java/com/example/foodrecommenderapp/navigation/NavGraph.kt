@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import com.example.foodrecommenderapp.admin.menu.presentation.MenuCreationScreen
 import com.example.foodrecommenderapp.auth.login.presentation.LoginScreen
 import com.example.foodrecommenderapp.auth.login.presentation.LoginViewModel
 import com.example.foodrecommenderapp.auth.register.presentation.RegisterScreen
@@ -46,7 +47,8 @@ fun NavGraph() {
             startDestination = Route.Home.route
         ) {
             composable(route = Route.Home.route) {
-                val viewModel = it.sharedViewModel<HomeSharedViewModel>(navController = navController)
+                val viewModel =
+                    it.sharedViewModel<HomeSharedViewModel>(navController = navController)
 
                 HomeScreen(
                     viewModel = viewModel,
@@ -55,9 +57,21 @@ fun NavGraph() {
             }
 
             composable(route = Route.Preference.route) {
-                val viewModel = it.sharedViewModel<HomeSharedViewModel>(navController = navController)
+                val viewModel =
+                    it.sharedViewModel<HomeSharedViewModel>(navController = navController)
                 PreferenceScreen(
                     viewModel = viewModel,
+                    navController = navController
+                )
+            }
+        }
+
+        navigation(
+            route = Route.AdminStart.route,
+            startDestination = Route.Admin.route
+        ) {
+            composable(route = Route.Admin.route) {
+                MenuCreationScreen(
                     navController = navController
                 )
             }

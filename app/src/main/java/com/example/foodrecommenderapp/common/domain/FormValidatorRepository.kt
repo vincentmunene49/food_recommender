@@ -7,4 +7,6 @@ interface FormValidatorRepository {
     fun validatePassword(password: String): ValidationResult
     fun validateUsername(username: String): ValidationResult
     fun validateConfirmPassword(password: String, confirmPassword: String): ValidationResult
+
+    fun validateMealField(field: String): ValidationResult
 }

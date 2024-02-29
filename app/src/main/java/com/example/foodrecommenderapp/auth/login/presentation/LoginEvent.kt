@@ -7,5 +7,7 @@ sealed class LoginEvent {
     data class OnClickTogglePasswordVisibility(val isPasswordVisible: Boolean) : LoginEvent()
     object OnDismissErrorDialog : LoginEvent()
 
+    object OnClickSwitchToAdmin : LoginEvent()
+
 
 }

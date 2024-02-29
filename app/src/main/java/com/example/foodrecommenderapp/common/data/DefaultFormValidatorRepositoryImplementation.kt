@@ -82,4 +82,23 @@ class DefaultFormValidatorRepositoryImplementation : FormValidatorRepository{
                 errorMessage = null
             )
         }
+
+    override fun validateMealField(field: String): ValidationResult {
+        if(field.isBlank()){
+            return ValidationResult(
+                successful = false,
+                errorMessage = "The meal field can not be blank"
+            )
+        }
+        if(field.isEmpty()){
+            return ValidationResult(
+                successful = false,
+                errorMessage = "The category field must be at least 1 characters long"
+            )
+        }
+        return ValidationResult(
+            successful = true,
+            errorMessage = null
+        )
+    }
 }

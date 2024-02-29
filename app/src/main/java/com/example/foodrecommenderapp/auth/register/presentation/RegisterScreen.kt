@@ -33,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -57,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.foodrecommenderapp.R
+import com.example.foodrecommenderapp.auth.login.presentation.LoginEvent
 import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.common.presentation.components.ErrorDialog
 import com.example.foodrecommenderapp.common.presentation.components.RecommenderAppButton
@@ -112,6 +115,7 @@ fun RegisterScreenContent(
                         }
                     }
                 }
+                else->{}
 
             }
 
@@ -442,7 +446,36 @@ fun RegisterScreenContent(
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
 
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+
+                        Text(
+                            modifier = Modifier,
+                            text = "Sign Up as an admin?",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Switch(
+                            checked =state.switchToAdmin,
+                            onCheckedChange ={onEvent(RegisterEvent.OnClickSwitchToAdmin)},
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+
+                            )
+                        )
+                    }
+                }
 
 
             }

@@ -3,6 +3,7 @@ package com.example.foodrecommenderapp.auth.register.data
 import com.example.foodrecommenderapp.auth.model.User
 import com.example.foodrecommenderapp.auth.register.domain.RegisterRepository
 import com.example.foodrecommenderapp.common.Resource
+import com.example.foodrecommenderapp.common.constants.ADMIN_COLLECTION
 import com.example.foodrecommenderapp.common.constants.USER_COLLECTION
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,16 +21,17 @@ class DefaultRegisterRepositoryImplementation @Inject constructor(
         email: String,
         password: String,
         name: String,
-        uid: String
+        isAdmin: Boolean
     ): Flow<Resource<User>> = flow {
 
         emit(Resource.Loading())
         try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
             val user = User(userName = name, email = email)
+            val collection = if (isAdmin) ADMIN_COLLECTION else USER_COLLECTION
             if (result.user != null) {
-                firebaseFirestore.collection(USER_COLLECTION)
-                    .document(uid)
+                firebaseFirestore.collection(collection)
+                    .document(result.user!!.uid)
                     .set(user)
                     .await()
                 emit(Resource.Success(user))

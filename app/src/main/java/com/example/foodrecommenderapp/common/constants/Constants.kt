@@ -2,6 +2,10 @@ package com.example.foodrecommenderapp.common.constants
 
 const val USER_COLLECTION = "users"
 
+const val ADMIN_COLLECTION = "admin_users"
+
+const val MENU_COLLECTION = "menu"
+
 const val BASE_URL = "https://www.themealdb.com/api/json/v1/1/"
 
 const val PREFERENCES_BASE_URL = "https://api.edamam.com"

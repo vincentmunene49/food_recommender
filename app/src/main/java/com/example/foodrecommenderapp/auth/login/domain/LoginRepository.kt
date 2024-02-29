@@ -6,5 +6,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface LoginRepository {
 
-    suspend fun login(email: String, password: String):Flow<Resource<FirebaseUser>>
+    suspend fun login(
+        email: String,
+        password: String,
+        isAdmin: Boolean
+    ): Flow<Resource<FirebaseUser>>
 }

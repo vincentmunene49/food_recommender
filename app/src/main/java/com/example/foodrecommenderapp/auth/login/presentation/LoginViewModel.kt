@@ -47,7 +47,11 @@ class LoginViewModel @Inject constructor(
                 val isEmailValid = validateEmail()
                 val isPasswordValid = validatePassword()
                 if (isEmailValid && isPasswordValid) {
-                    login(state.email, state.password)
+                    login(
+                        state.email,
+                        state.password,
+                        state.switchToAdmin
+                    )
 
                 }
             }
@@ -62,19 +66,30 @@ class LoginViewModel @Inject constructor(
                 )
 
             }
+
+            LoginEvent.OnClickSwitchToAdmin -> {
+                state = state.copy(
+                    switchToAdmin = !state.switchToAdmin
+                )
+            }
         }
     }
 
 
-    private fun login(email: String, password: String) {
+    private fun login(email: String, password: String, isAdmin:Boolean) {
         viewModelScope.launch {
-            repository.login(email, password).onEach { resource ->
+            repository.login(email, password,isAdmin).onEach { resource ->
                 when (resource) {
                     is Resource.Success -> {
                         state = state.copy(
                             isLoading = false,
                         )
-                        _uiEvent.send(UiEvent.OnSuccess("Login successful"))
+                        if (state.switchToAdmin) {
+                            _uiEvent.send(UiEvent.NavigateToAdminScreen("Login admin success"))
+                        } else {
+                            _uiEvent.send(UiEvent.OnSuccess("Login successful"))
+                        }
+
                     }
 
                     is Resource.Error -> {

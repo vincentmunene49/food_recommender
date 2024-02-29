@@ -9,6 +9,6 @@ data class LoginState(
     val isLoading: Boolean = false,
     val errorMessage: String = "",
     val showErrorDialog: Boolean = false,
-
+    val switchToAdmin:Boolean = false
 ) {
 }

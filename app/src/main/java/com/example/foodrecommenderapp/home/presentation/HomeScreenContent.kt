@@ -106,6 +106,7 @@ fun HomeScreenContent(
                 is UiEvent.OnSuccess -> {
                     navController.navigate(route = Route.Preference.route)
                 }
+                else->{}
             }
         }
 

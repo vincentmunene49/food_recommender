@@ -66,6 +66,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     //hilt
     implementation("com.google.dagger:hilt-android:2.45")
+    implementation("com.google.firebase:firebase-storage:20.3.0")
     kapt("com.google.dagger:hilt-compiler:2.45")
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 

@@ -1,5 +1,7 @@
 package com.example.foodrecommenderapp.auth.register.presentation
 
+import com.example.foodrecommenderapp.auth.login.presentation.LoginEvent
+
 sealed class RegisterEvent {
     data class OnTypeUsername(val username: String) : RegisterEvent()
     data class OnTypeEmail(val email: String) : RegisterEvent()
@@ -11,4 +13,6 @@ sealed class RegisterEvent {
         RegisterEvent()
 
     object OnDismissErrorDialog : RegisterEvent()
+
+    object OnClickSwitchToAdmin : RegisterEvent()
 }

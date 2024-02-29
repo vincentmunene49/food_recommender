@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +30,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -97,13 +101,20 @@ fun LoginScreenContent(
         uiEvent.collect {
             when (it) {
                 is UiEvent.OnSuccess -> {
-                    navController.navigate(route = Route.Content.route){
+                    navController.navigate(route = Route.Content.route) {
                         Timber.tag("NAVIGATION").d("popping back stack")
                         navController.popBackStack(Route.Login.route, inclusive = true)
 
                     }
                 }
 
+                is UiEvent.NavigateToAdminScreen -> {
+                    navController.navigate(route = Route.AdminStart.route) {
+                        Timber.tag("NAVIGATION").d("popping back stack")
+                        navController.popBackStack(Route.Login.route, inclusive = true)
+
+                    }
+                }
             }
         }
 
@@ -295,10 +306,15 @@ fun LoginScreenContent(
                         )
                         Text(
                             modifier = Modifier
-                                .clickable { navController.navigate(route = Route.Register.route){
-                                    navController.popBackStack(Route.Login.route, inclusive = true)
+                                .clickable {
+                                    navController.navigate(route = Route.Register.route) {
+                                        navController.popBackStack(
+                                            Route.Login.route,
+                                            inclusive = true
+                                        )
 
-                                } },
+                                    }
+                                },
                             text = "Sign Up",
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
@@ -308,6 +324,38 @@ fun LoginScreenContent(
                 Spacer(modifier = Modifier.height(16.dp))
 
 
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+
+                        Text(
+                            modifier = Modifier,
+                            text = "Sign In as an admin?",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Switch(
+
+                            checked = state.switchToAdmin,
+                            onCheckedChange = { onEvent(LoginEvent.OnClickSwitchToAdmin) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                uncheckedThumbColor = MaterialTheme.colorScheme.secondary,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
+
+                            )
+                        )
+                    }
+                }
 
             }
 

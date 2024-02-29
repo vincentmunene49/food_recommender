@@ -15,4 +15,6 @@ data class RegisterState(
     val errorMessage: String = "",
     val showErrorDialog: Boolean = false,
     val imagePath:String = "",
+    val switchToAdmin:Boolean = false
+
 )

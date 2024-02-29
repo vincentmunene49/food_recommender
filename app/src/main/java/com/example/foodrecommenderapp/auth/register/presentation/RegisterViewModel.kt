@@ -59,13 +59,17 @@ class RegisterViewModel @Inject constructor(
                 val isUsernameValid = validateUsername()
                 val isConfirmPasswordValid = validateConfirmPassword()
 
-                if(isEmailValid && isPasswordValid && isUsernameValid &&
-                    isConfirmPasswordValid){
+                if (isEmailValid && isPasswordValid && isUsernameValid &&
+                    isConfirmPasswordValid
+                ) {
                     registerUser(
                         state.email,
                         state.password,
-                        state.username
+                        state.username,
+                        state.switchToAdmin
                     )
+
+
                 }
             }
 
@@ -82,6 +86,13 @@ class RegisterViewModel @Inject constructor(
                     showErrorDialog = false
                 )
             }
+
+            RegisterEvent.OnClickSwitchToAdmin -> {
+                state = state.copy(
+                    switchToAdmin = !state.switchToAdmin
+                )
+                Timber.tag("RegisterViewModel").d("Switch to admin: ${state.switchToAdmin}")
+            }
         }
     }
 
@@ -89,13 +100,14 @@ class RegisterViewModel @Inject constructor(
         email: String,
         password: String,
         name: String,
+        isAdmin: Boolean
     ) {
         viewModelScope.launch {
             repository.register(
                 email,
                 password,
                 name,
-                UUID.randomUUID().toString()
+                isAdmin
             ).onEach {
                 when (it) {
                     is Resource.Success -> {
