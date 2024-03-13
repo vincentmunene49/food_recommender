@@ -9,6 +9,7 @@ import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.home.domain.HomeRepository
 import com.example.foodrecommenderapp.preference.domain.PreferenceRepository
+import com.example.foodrecommenderapp.report.model.Reports
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
@@ -16,6 +17,9 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,12 +61,14 @@ class HomeSharedViewModel @Inject constructor(
                 )
             }
 
-
             HomeScreenEvents.OnClickOk -> {
                 state = state.copy(
-                    showPreferencesDialog = false
+                    showPreferencesDialog = false,
+                    totalSearches = state.totalSearches + 1
                 )
-                getMealByPreference()
+                getMealByPreference().also {
+                    saveReports()
+                }
             }
 
             is HomeScreenEvents.OnDeselectCousinePreference -> {
@@ -379,4 +385,46 @@ class HomeSharedViewModel @Inject constructor(
             )
         }
     }
+
+    private fun saveReports() {
+        val reports = Reports(
+            date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()),
+            preferences = mapOf(
+                "cuisineType" to state.selectedCousineListPreferences.groupingBy { it }.eachCount(),
+                "diet" to state.selectedDietListPreferences.groupingBy { it }.eachCount(),
+                "dishType" to state.selectedDishTypePreferences.groupingBy { it }.eachCount(),
+                "health" to state.selectedHealthListPreferences.groupingBy { it }.eachCount(),
+                "mealType" to state.selectedMealTypePreferences.groupingBy { it }.eachCount()
+            ),
+            totalSearches = state.totalSearches
+        )
+        viewModelScope.launch {
+            preferenceRepository.saveReports(
+                reports
+            ).onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true,
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
 }

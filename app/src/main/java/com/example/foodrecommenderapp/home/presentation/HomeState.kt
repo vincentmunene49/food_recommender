@@ -24,8 +24,10 @@ data class HomeState(
     val isDietPreferenceExpanded: Boolean = false,
     val isCousinePreferenceExpanded: Boolean = false,
     val isMealTypePreferenceExpanded: Boolean = false,
-    val isDishTypePreferenceExpanded: Boolean = false
+    val isDishTypePreferenceExpanded: Boolean = false,
+    val totalSearches: Long = 0L
 
 
 ) {
+
 }

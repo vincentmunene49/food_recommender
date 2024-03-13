@@ -112,6 +112,6 @@ object Module {
 
     @Provides
     @Singleton
-    fun providePreferenceRepository(preferenceGeneratorService: PreferenceGeneratorService): PreferenceRepository =
-        DefaultPreferencesRepositoryImplementation(preferenceGeneratorService)
+    fun providePreferenceRepository(preferenceGeneratorService: PreferenceGeneratorService, firestore: FirebaseFirestore): PreferenceRepository =
+        DefaultPreferencesRepositoryImplementation(preferenceGeneratorService, firestore)
 }
