@@ -1,12 +1,14 @@
-package com.example.foodrecommenderapp.admin.menu.presentation
+package com.example.foodrecommenderapp.admin.common.presentation
 
 import android.net.Uri
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import com.example.foodrecommenderapp.admin.menu.model.Menu
+import com.example.foodrecommenderapp.admin.report.model.Reports
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-data class MenuState(
+data class AdminState(
     val menuList: List<Menu> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String = "",
@@ -27,6 +29,9 @@ data class MenuState(
     val isDietPreferenceExpanded: Boolean = false,
     val isCousinePreferenceExpanded: Boolean = false,
     val isMealTypePreferenceExpanded: Boolean = false,
-    val isDishTypePreferenceExpanded: Boolean = false
+    val isDishTypePreferenceExpanded: Boolean = false,
+    val reports: Reports? = null,
+    val showEmptyScreen:Boolean = false,
+    val date:String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 ) {
 }

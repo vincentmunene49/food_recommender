@@ -2,7 +2,6 @@ package com.example.foodrecommenderapp.admin.menu.presentation
 
 import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,12 +51,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
-import com.example.foodrecommenderapp.auth.register.presentation.RegisterEvent
+import com.example.foodrecommenderapp.admin.common.presentation.AdminEvents
+import com.example.foodrecommenderapp.admin.common.presentation.AdminSharedViewModel
+import com.example.foodrecommenderapp.admin.common.presentation.AdminState
 import com.example.foodrecommenderapp.common.constants.CUISINELISTLABELS
 import com.example.foodrecommenderapp.common.constants.DIETLISTLABELS
 import com.example.foodrecommenderapp.common.constants.DISHTYPELIST
@@ -71,11 +71,9 @@ import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 
 @Composable
 fun MenuCreationScreen(
-    navController: NavController,
-    viewModel: MenuViewModel = hiltViewModel()
+    viewModel: AdminSharedViewModel
 ) {
     MenuCreationScreenContent(
-        navController = navController,
         state = viewModel.state,
         onEvent = viewModel::onEvent,
     )
@@ -84,9 +82,8 @@ fun MenuCreationScreen(
 @Composable
 fun MenuCreationScreenContent(
     modifier: Modifier = Modifier,
-    state: MenuState = MenuState(),
-    onEvent: (MenuEvents) -> Unit = {},
-    navController: NavController
+    state: AdminState = AdminState(),
+    onEvent: (AdminEvents) -> Unit = {}
 ) {
 
     val focusManager = LocalFocusManager.current
@@ -107,356 +104,330 @@ fun MenuCreationScreenContent(
 
     val imagePicker =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
-            onEvent(MenuEvents.OnImageSelected(uri!!))
+            onEvent(AdminEvents.OnImageSelected(uri!!))
         }
 
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.background)
 
+    ) {
 
-    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-        Row(
-            modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(modifier = Modifier.padding(start = 16.dp),
-                onClick = { navController.navigateUp() }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+        if (state.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
 
-            }
-
-            Text(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                text = "Create Menu",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
+        if (state.showErrorDialog) {
+            ErrorDialog(
+                errorMessage = state.errorMessage,
+                onDismissDialog = { onEvent(AdminEvents.OnDismissErrorDialog) }
             )
 
         }
-    }) { paddingValues ->
-        Box(
+
+        LazyColumn(
             modifier = modifier
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.background)
-                .padding(paddingValues = paddingValues)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
 
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            if (state.showErrorDialog) {
-                ErrorDialog(
-                    errorMessage = state.errorMessage,
-                    onDismissDialog = { onEvent(MenuEvents.OnDismissErrorDialog) }
-                )
-
-            }
-
-            LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape
-                                )
-                                .clickable {
-                                    imagePicker.launch("image/*")
-                                }
-                                .size(120.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (mutableStateOf(state.image).value  == null) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.add_photo),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                AsyncImage(
-                                    model = mutableStateOf(state.image).value ?: "",
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    placeholder = painterResource(id = R.drawable.add_photo)
-                                )
-                            }
-
-                        }
-                    }
-                }
-
-                item {
-                    RecommenderAppTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        value = state.mealName ?: "",
-                        onValueChange = {
-                            onEvent(MenuEvents.OnAddMealName(it))
-                        },
-                        label = {
-                            Text(text = "Meal Name")
-                        },
-                        isError = isMealName && state.mealNameErrorMessage != null,
-                        supportingText = {
-                            state.mealNameErrorMessage?.let {
-                                Text(text = it, color = MaterialTheme.colorScheme.error)
-                            }
-
-                        },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(focusDirection = FocusDirection.Down) }
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            errorContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
-
-
-
-                item {
-                    RecommenderAppTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        value = state.mealCategory ?: "",
-                        onValueChange = {
-                            onEvent(MenuEvents.OnAddCategory(it))
-                        },
-                        label = {
-                            Text(text = "Meal Category")
-                        },
-                        isError = isCategoryFocused && state.categoryErrorMessage != null,
-                        supportingText = {
-                            state.categoryErrorMessage?.let {
-                                Text(text = it, color = MaterialTheme.colorScheme.error)
-                            }
-
-                        },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = { focusManager.clearFocus() }
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            errorContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
-
-                item {
-                    Divider()
-                }
-
-                item {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp),
-                        text = "Ingredients",
-                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp)
-                    )
-                }
-
-                itemsIndexed(state.ingredients) { index, textField ->
-                    RecommenderAppTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        value = textField,
-                        onValueChange = { newValue ->
-                            onEvent(MenuEvents.OnAddIngredient(index, newValue))
-                        },
-                        label = { Text(text = "Ingredient ${index + 1}") },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            errorContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp)
                             .clip(CircleShape)
-                            .clickable { onEvent(MenuEvents.OnClickAddIngredient("")) },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier.background(
+                            .background(
                                 color = MaterialTheme.colorScheme.primary,
                                 shape = CircleShape
                             )
-                        ) {
-                            Icon(
-                                modifier = Modifier.padding(5.dp),
-                                imageVector = Icons.Default.Add,
+                            .clickable {
+                                imagePicker.launch("image/*")
+                            }
+                            .size(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (mutableStateOf(state.image).value == null) {
+                            Image(
+                                painter = painterResource(id = R.drawable.add_photo),
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            AsyncImage(
+                                model = mutableStateOf(state.image).value ?: "",
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.add_photo)
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
 
-                        Text(
-                            text = "Add Ingredient",
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
-
-                }
-
-                item {
-                    Divider()
-                }
-
-                item {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp),
-                        text = "Preferences",
-                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp)
-                    )
-                }
-                item {
-
-                    DropDownMenu(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        menuItems = dropDownBoxList[0],
-                        onDismiss = { onEvent(MenuEvents.OnDismissHealthDropDown) },
-                        selectedItems = state.selectedHealthListPreferences,
-                        onSelectMenuItem = { onEvent(MenuEvents.OnSelectHealthPreference(it)) },
-                        onDeselectMenuItem = { onEvent(MenuEvents.OnDeselectHealthPreference(it)) },
-                        onClickDone = { onEvent(MenuEvents.OnClickHealthDoneAction) },
-                        placeHolder = placeHolderList[0],
-                        onExpandedChange = { onEvent(MenuEvents.OnHealthExpandedStateChange) },
-                        isExpanded = state.isHealthPreferenceExpanded
-
-                    )
-                }
-
-                //fill drop down for diet
-                item {
-                    DropDownMenu(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        menuItems = dropDownBoxList[1],
-                        onDismiss = { onEvent(MenuEvents.OnDismissDietDropDown) },
-                        selectedItems = state.selectedDietListPreferences,
-                        onSelectMenuItem = { onEvent(MenuEvents.OnSelectDietPreference(it)) },
-                        onDeselectMenuItem = { onEvent(MenuEvents.OnDeselectDietPreference(it)) },
-                        onClickDone = { onEvent(MenuEvents.OnClickDietDoneAction) },
-                        placeHolder = placeHolderList[1],
-                        onExpandedChange = { onEvent(MenuEvents.OnDietExpandedStateChange) },
-                        isExpanded = state.isDietPreferenceExpanded
-
-                    )
-                }
-
-                //fill drop down for cuisine
-                item {
-                    DropDownMenu(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        menuItems = dropDownBoxList[2],
-                        onDismiss = { onEvent(MenuEvents.OnDismissCousineDropDown) },
-                        selectedItems = state.selectedCousineListPreferences,
-                        onSelectMenuItem = { onEvent(MenuEvents.OnSelectCousinePreference(it)) },
-                        onDeselectMenuItem = { onEvent(MenuEvents.OnDeselectCousinePreference(it)) },
-                        onClickDone = { onEvent(MenuEvents.OnClickCousineDoneAction) },
-                        placeHolder = placeHolderList[2],
-                        onExpandedChange = { onEvent(MenuEvents.OnCousineExpandedStateChange) },
-                        isExpanded = state.isCousinePreferenceExpanded
-
-                    )
-                }
-
-                //fill drop down for dish type
-                item {
-                    DropDownMenu(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        menuItems = dropDownBoxList[3],
-                        onDismiss = { onEvent(MenuEvents.OnDismissDishTypeDropDown) },
-                        selectedItems = state.selectedDishTypePreferences,
-                        onSelectMenuItem = { onEvent(MenuEvents.OnSelectDishTypePreference(it)) },
-                        onDeselectMenuItem = { onEvent(MenuEvents.OnDeselectDishTypePreference(it)) },
-                        onClickDone = { onEvent(MenuEvents.OnClickDishTypeDoneAction) },
-                        placeHolder = placeHolderList[3],
-                        onExpandedChange = { onEvent(MenuEvents.OnDishTypeExpandedStateChange) },
-                        isExpanded = state.isDishTypePreferenceExpanded
-
-                    )
-                }
-
-                //fill drop down for meal type
-                item {
-                    DropDownMenu(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        menuItems = dropDownBoxList[4],
-                        onDismiss = { onEvent(MenuEvents.OnDismissMealTypeDropDown) },
-                        selectedItems = state.selectedMealTypePreferences,
-                        onSelectMenuItem = { onEvent(MenuEvents.OnSelectMealTypePreference(it)) },
-                        onDeselectMenuItem = { onEvent(MenuEvents.OnDeselectMealTypePreference(it)) },
-                        onClickDone = { onEvent(MenuEvents.OnClickMealTypeDoneAction) },
-                        placeHolder = placeHolderList[4],
-                        onExpandedChange = { onEvent(MenuEvents.OnMealTypeExpandedStateChange) },
-                        isExpanded = state.isMealTypePreferenceExpanded
-
-                    )
-                }
-                item {
-                    RecommenderAppButton(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        onClick = { onEvent(MenuEvents.OnClickSubmit) },
-                        text = "Submit"
-                    )
-                }
-
-
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
 
+            item {
+                RecommenderAppTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    value = state.mealName ?: "",
+                    onValueChange = {
+                        onEvent(AdminEvents.OnAddMealName(it))
+                    },
+                    label = {
+                        Text(text = "Meal Name")
+                    },
+                    isError = isMealName && state.mealNameErrorMessage != null,
+                    supportingText = {
+                        state.mealNameErrorMessage?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(focusDirection = FocusDirection.Down) }
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        errorContainerColor = Color.Transparent,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+
+
+            item {
+                RecommenderAppTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    value = state.mealCategory ?: "",
+                    onValueChange = {
+                        onEvent(AdminEvents.OnAddCategory(it))
+                    },
+                    label = {
+                        Text(text = "Meal Category")
+                    },
+                    isError = isCategoryFocused && state.categoryErrorMessage != null,
+                    supportingText = {
+                        state.categoryErrorMessage?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { focusManager.clearFocus() }
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        errorContainerColor = Color.Transparent,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            item {
+                Divider()
+            }
+
+            item {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp),
+                    text = "Ingredients",
+                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp)
+                )
+            }
+
+            itemsIndexed(state.ingredients) { index, textField ->
+                RecommenderAppTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    value = textField,
+                    onValueChange = { newValue ->
+                        onEvent(AdminEvents.OnAddIngredient(index, newValue))
+                    },
+                    label = { Text(text = "Ingredient ${index + 1}") },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        errorContainerColor = Color.Transparent,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp)
+                        .clip(CircleShape)
+                        .clickable { onEvent(AdminEvents.OnClickAddIngredient("")) },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape
+                        )
+                    ) {
+                        Icon(
+                            modifier = Modifier.padding(5.dp),
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Add Ingredient",
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+            }
+
+            item {
+                Divider()
+            }
+
+            item {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp),
+                    text = "Preferences",
+                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 18.sp)
+                )
+            }
+            item {
+
+                DropDownMenu(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    menuItems = dropDownBoxList[0],
+                    onDismiss = { onEvent(AdminEvents.OnDismissHealthDropDown) },
+                    selectedItems = state.selectedHealthListPreferences,
+                    onSelectMenuItem = { onEvent(AdminEvents.OnSelectHealthPreference(it)) },
+                    onDeselectMenuItem = { onEvent(AdminEvents.OnDeselectHealthPreference(it)) },
+                    onClickDone = { onEvent(AdminEvents.OnClickHealthDoneAction) },
+                    placeHolder = placeHolderList[0],
+                    onExpandedChange = { onEvent(AdminEvents.OnHealthExpandedStateChange) },
+                    isExpanded = state.isHealthPreferenceExpanded
+
+                )
+            }
+
+            //fill drop down for diet
+            item {
+                DropDownMenu(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    menuItems = dropDownBoxList[1],
+                    onDismiss = { onEvent(AdminEvents.OnDismissDietDropDown) },
+                    selectedItems = state.selectedDietListPreferences,
+                    onSelectMenuItem = { onEvent(AdminEvents.OnSelectDietPreference(it)) },
+                    onDeselectMenuItem = { onEvent(AdminEvents.OnDeselectDietPreference(it)) },
+                    onClickDone = { onEvent(AdminEvents.OnClickDietDoneAction) },
+                    placeHolder = placeHolderList[1],
+                    onExpandedChange = { onEvent(AdminEvents.OnDietExpandedStateChange) },
+                    isExpanded = state.isDietPreferenceExpanded
+
+                )
+            }
+
+            //fill drop down for cuisine
+            item {
+                DropDownMenu(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    menuItems = dropDownBoxList[2],
+                    onDismiss = { onEvent(AdminEvents.OnDismissCousineDropDown) },
+                    selectedItems = state.selectedCousineListPreferences,
+                    onSelectMenuItem = { onEvent(AdminEvents.OnSelectCousinePreference(it)) },
+                    onDeselectMenuItem = { onEvent(AdminEvents.OnDeselectCousinePreference(it)) },
+                    onClickDone = { onEvent(AdminEvents.OnClickCousineDoneAction) },
+                    placeHolder = placeHolderList[2],
+                    onExpandedChange = { onEvent(AdminEvents.OnCousineExpandedStateChange) },
+                    isExpanded = state.isCousinePreferenceExpanded
+
+                )
+            }
+
+            //fill drop down for dish type
+            item {
+                DropDownMenu(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    menuItems = dropDownBoxList[3],
+                    onDismiss = { onEvent(AdminEvents.OnDismissDishTypeDropDown) },
+                    selectedItems = state.selectedDishTypePreferences,
+                    onSelectMenuItem = { onEvent(AdminEvents.OnSelectDishTypePreference(it)) },
+                    onDeselectMenuItem = { onEvent(AdminEvents.OnDeselectDishTypePreference(it)) },
+                    onClickDone = { onEvent(AdminEvents.OnClickDishTypeDoneAction) },
+                    placeHolder = placeHolderList[3],
+                    onExpandedChange = { onEvent(AdminEvents.OnDishTypeExpandedStateChange) },
+                    isExpanded = state.isDishTypePreferenceExpanded
+
+                )
+            }
+
+            //fill drop down for meal type
+            item {
+                DropDownMenu(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    menuItems = dropDownBoxList[4],
+                    onDismiss = { onEvent(AdminEvents.OnDismissMealTypeDropDown) },
+                    selectedItems = state.selectedMealTypePreferences,
+                    onSelectMenuItem = { onEvent(AdminEvents.OnSelectMealTypePreference(it)) },
+                    onDeselectMenuItem = { onEvent(AdminEvents.OnDeselectMealTypePreference(it)) },
+                    onClickDone = { onEvent(AdminEvents.OnClickMealTypeDoneAction) },
+                    placeHolder = placeHolderList[4],
+                    onExpandedChange = { onEvent(AdminEvents.OnMealTypeExpandedStateChange) },
+                    isExpanded = state.isMealTypePreferenceExpanded
+
+                )
+            }
+            item {
+                RecommenderAppButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    onClick = { onEvent(AdminEvents.OnClickSubmit) },
+                    text = "Submit"
+                )
+            }
+
+
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
         }
+
     }
+
 }
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -466,7 +437,6 @@ fun PreviewMenuCreationScreen() {
 
     FoodRecommenderAppTheme {
         MenuCreationScreenContent(
-            navController = rememberNavController()
         )
     }
 

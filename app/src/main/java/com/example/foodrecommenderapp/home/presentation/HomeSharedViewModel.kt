@@ -9,7 +9,7 @@ import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.home.domain.HomeRepository
 import com.example.foodrecommenderapp.preference.domain.PreferenceRepository
-import com.example.foodrecommenderapp.report.model.Reports
+import com.example.foodrecommenderapp.admin.report.model.Reports
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn

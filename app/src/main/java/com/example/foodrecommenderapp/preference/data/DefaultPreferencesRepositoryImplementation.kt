@@ -1,11 +1,13 @@
 package com.example.foodrecommenderapp.preference.data
 
+import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.constants.REPORT_COLLECTION
 import com.example.foodrecommenderapp.preference.data.network.PreferenceGeneratorService
 import com.example.foodrecommenderapp.preference.data.pojo.GenerateMeal
 import com.example.foodrecommenderapp.preference.domain.PreferenceRepository
-import com.example.foodrecommenderapp.report.model.Reports
+import com.example.foodrecommenderapp.admin.report.model.Reports
+import com.example.foodrecommenderapp.common.constants.MENU_COLLECTION
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class DefaultPreferencesRepositoryImplementation @Inject constructor(
     private val repository: PreferenceGeneratorService,
@@ -42,6 +45,20 @@ class DefaultPreferencesRepositoryImplementation @Inject constructor(
 
     }
 
+    override suspend fun getAllMenus(): Flow<Resource<List<Menu>>> = flow {
+        emit(Resource.Loading())
+        try {
+            val result = fireStoreDb.collection(MENU_COLLECTION).get().await()
+            val menu = result.toObjects(Menu::class.java)
+            emit(Resource.Success(menu))
+        } catch (e: Exception) {
+            if (e is CancellationException) {
+                throw e
+            }
+            emit(Resource.Error("☹\uFE0F \n ${e.message}"))
+        }
+    }
+
     override suspend fun saveReports(
         reports: Reports
     ): Flow<Resource<Unit>> = flow {
@@ -51,83 +68,24 @@ class DefaultPreferencesRepositoryImplementation @Inject constructor(
             val docRef = fireStoreDb.collection(REPORT_COLLECTION).document(reports.date)
 
             fireStoreDb.runTransaction { transaction ->
-                val snapshot = transaction.get(docRef)
+                val data = mutableMapOf<String, Any>()
+                data["totalSearches"] = FieldValue.increment(1)
 
-                transaction.update(docRef, "totalSearches", FieldValue.increment(1))
-
-
-                val currentPreferences =
-                    snapshot.get("preferences") as? Map<String, Map<String, Int>> ?: emptyMap()
-
+                val preferencesData = mutableMapOf<String, Any>()
                 reports.preferences.forEach { (category, preferenceMap) ->
+                    val categoryData = mutableMapOf<String, Any>()
                     preferenceMap.forEach { (preference, count) ->
-                        val fieldPath = "preferences.$category.$preference"
-                        transaction.update(docRef, fieldPath, FieldValue.increment(count.toLong()))
+                        categoryData[preference] = FieldValue.increment(count.toLong())
                     }
-
+                    preferencesData[category] = categoryData
                 }
+                data["preferences"] = preferencesData
+
+                transaction.set(docRef, data, SetOptions.merge())
             }.await()
-            Resource.Success(Unit)
+            emit(Resource.Success(Unit))
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred"))
         }
     }
 }
-/*
-override suspend fun saveReports(
-    date: String,
-    category: String,
-    preference: String
-): Flow<Resource<Unit>> = flow {
-    emit(Resource.Loading())
-
-    try {
-        val db = FirebaseFirestore.getInstance()
-
-        // Get a reference to the document for the given date
-        val docRef = db.collection(REPORT_COLLECTION).document(date)
-
-        db.runTransaction { transaction ->
-            val snapshot = transaction.get(docRef)
-
-            // Increment the total number of searches
-            var totalSearches = snapshot.getLong("totalSearches") ?: 0
-            totalSearches++
-            transaction.update(docRef, "totalSearches", totalSearches)
-
-            // Get the current preferences map
-            val currentPreferences = snapshot.get("preferences") as? Map<String, Map<String, Long>> ?: emptyMap()
-
-            // Create a mutable copy of the current preferences map
-            val updatedPreferences = currentPreferences.toMutableMap()
-
-            // Get the current category map
-            val currentCategory = updatedPreferences[category]?.toMutableMap() ?: mutableMapOf()
-
-            // Get the current preference map within the category
-            val currentPreference = currentCategory[preference]?.toMutableMap() ?: mutableMapOf()
-
-            // Increment the count for this preference
-            val currentCount = currentPreference[preference] ?: 0
-            currentPreference[preference] = currentCount + 1
-
-            // Update the preference map in the category map
-            currentCategory[preference] = currentPreference
-
-            // Update the category map in the preferences map
-            updatedPreferences[category] = currentCategory
-
-            // Update the preferences map in Firestore
-            transaction.update(docRef, "preferences", updatedPreferences)
-        }.addOnSuccessListener {
-            emit(Resource.Success(Unit))
-        }.addOnFailureListener { e ->
-            emit(Resource.Error(e.message ?: "An error occurred"))
-        }
-    } catch (e: Exception) {
-        emit(Resource.Error(e.message ?: "An error occurred"))
-    }
-}
-
-*
- */

@@ -1,4 +1,4 @@
-package com.example.foodrecommenderapp.report.model
+package com.example.foodrecommenderapp.admin.report.model
 
 data class Reports(
     var date: String = "",

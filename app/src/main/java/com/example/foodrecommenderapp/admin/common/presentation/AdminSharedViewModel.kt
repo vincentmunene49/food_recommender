@@ -1,4 +1,4 @@
-package com.example.foodrecommenderapp.admin.menu.presentation
+package com.example.foodrecommenderapp.admin.common.presentation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -6,51 +6,62 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.foodrecommenderapp.admin.menu.domain.MenuRepository
+import com.example.foodrecommenderapp.admin.common.domain.AdminRepository
 import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
+import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.common.domain.FormValidatorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class MenuViewModel @Inject constructor(
-    private val menuRepository: MenuRepository,
+class AdminSharedViewModel @Inject constructor(
+    private val adminRepository: AdminRepository,
     private val formValidator: FormValidatorRepository
 ) : ViewModel() {
 
-    var state by mutableStateOf(MenuState())
+    var state by mutableStateOf(AdminState())
         private set
 
-    fun onEvent(event: MenuEvents) {
+
+    private var _uiEvent = Channel<UiEvent>()
+    val uiEvent = _uiEvent.receiveAsFlow()
+
+    init {
+        getReports()
+    }
+
+    fun onEvent(event: AdminEvents) {
 
         when (event) {
-            is MenuEvents.OnAddMealName -> {
+            is AdminEvents.OnAddMealName -> {
                 state = state.copy(mealName = event.name)
                 validateMealName()
             }
 
-            is MenuEvents.OnAddCategory -> {
+            is AdminEvents.OnAddCategory -> {
                 state = state.copy(mealCategory = event.category)
                 validateCategory()
             }
 
-            is MenuEvents.OnImageSelected -> {
+            is AdminEvents.OnImageSelected -> {
                 state = state.copy(image = event.imageUri)
                 Timber.tag("MenuViewModel").d("Image uri: ${event.imageUri}")
             }
 
-            is MenuEvents.OnClickAddIngredient -> {
+            is AdminEvents.OnClickAddIngredient -> {
                 val newIngredientList = state.ingredients
                 newIngredientList.add(event.ingredient)
                 state = state.copy(ingredients = newIngredientList)
             }
 
-            is MenuEvents.OnClickSubmit -> {
+            is AdminEvents.OnClickSubmit -> {
                 val isMealNameValid = validateMealName()
                 val isCategoryValid = validateCategory()
                 if (isMealNameValid && isCategoryValid) {
@@ -58,62 +69,62 @@ class MenuViewModel @Inject constructor(
                 }
             }
 
-            is MenuEvents.OnDismissErrorDialog -> {
+            is AdminEvents.OnDismissErrorDialog -> {
                 state = state.copy(
                     showErrorDialog = false,
                     errorMessage = ""
                 )
             }
 
-            is MenuEvents.OnDismissSuccessDialog -> {
+            is AdminEvents.OnDismissSuccessDialog -> {
                 state = state.copy(
                     showSuccessDialog = false
                 )
             }
 
-            is MenuEvents.OnAddIngredient -> {
+            is AdminEvents.OnAddIngredient -> {
                 val newIngredient = state.ingredients
                 newIngredient[event.index] = event.ingredient
                 state = state.copy(ingredients = newIngredient)
             }
 
-            MenuEvents.OnClickCousineDoneAction -> {
+            AdminEvents.OnClickCousineDoneAction -> {
                 state = state.copy(
                     isCousinePreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnClickDietDoneAction -> {
+            AdminEvents.OnClickDietDoneAction -> {
                 state = state.copy(
                     isDietPreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnClickDishTypeDoneAction -> {
+            AdminEvents.OnClickDishTypeDoneAction -> {
                 state = state.copy(
                     isDishTypePreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnClickHealthDoneAction -> {
+            AdminEvents.OnClickHealthDoneAction -> {
                 state = state.copy(
                     isHealthPreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnClickMealTypeDoneAction -> {
+            AdminEvents.OnClickMealTypeDoneAction -> {
                 state = state.copy(
                     isMealTypePreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnCousineExpandedStateChange -> {
+            AdminEvents.OnCousineExpandedStateChange -> {
                 state = state.copy(
                     isCousinePreferenceExpanded = !state.isCousinePreferenceExpanded
                 )
             }
 
-            is MenuEvents.OnDeselectCousinePreference -> {
+            is AdminEvents.OnDeselectCousinePreference -> {
                 val list = state.selectedCousineListPreferences.toMutableList()
                 list.remove(event.cousineItem)
                 state = state.copy(
@@ -121,7 +132,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnDeselectDietPreference -> {
+            is AdminEvents.OnDeselectDietPreference -> {
                 val list = state.selectedDietListPreferences.toMutableList()
                 list.remove(event.dietItem)
                 state = state.copy(
@@ -129,7 +140,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnDeselectDishTypePreference -> {
+            is AdminEvents.OnDeselectDishTypePreference -> {
                 val list = state.selectedDishTypePreferences.toMutableList()
                 list.remove(event.dishTypeItem)
                 state = state.copy(
@@ -137,7 +148,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnDeselectHealthPreference -> {
+            is AdminEvents.OnDeselectHealthPreference -> {
                 val list = state.selectedHealthListPreferences.toMutableList()
                 list.remove(event.healthItem)
                 state = state.copy(
@@ -145,7 +156,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnDeselectMealTypePreference -> {
+            is AdminEvents.OnDeselectMealTypePreference -> {
                 val list = state.selectedMealTypePreferences.toMutableList()
                 list.remove(event.mealTypeItem)
                 state = state.copy(
@@ -153,61 +164,61 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            MenuEvents.OnDietExpandedStateChange -> {
+            AdminEvents.OnDietExpandedStateChange -> {
                 state = state.copy(
                     isDietPreferenceExpanded = !state.isDietPreferenceExpanded
                 )
             }
 
-            MenuEvents.OnDishTypeExpandedStateChange -> {
+            AdminEvents.OnDishTypeExpandedStateChange -> {
                 state = state.copy(
                     isDishTypePreferenceExpanded = !state.isDishTypePreferenceExpanded
                 )
             }
 
-            MenuEvents.OnDismissCousineDropDown -> {
+            AdminEvents.OnDismissCousineDropDown -> {
                 state = state.copy(
                     isCousinePreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnDismissDietDropDown -> {
+            AdminEvents.OnDismissDietDropDown -> {
                 state = state.copy(
                     isDietPreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnDismissDishTypeDropDown -> {
+            AdminEvents.OnDismissDishTypeDropDown -> {
                 state = state.copy(
                     isDishTypePreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnDismissHealthDropDown -> {
+            AdminEvents.OnDismissHealthDropDown -> {
                 state = state.copy(
                     isHealthPreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnDismissMealTypeDropDown -> {
+            AdminEvents.OnDismissMealTypeDropDown -> {
                 state = state.copy(
                     isMealTypePreferenceExpanded = false
                 )
             }
 
-            MenuEvents.OnHealthExpandedStateChange -> {
+            AdminEvents.OnHealthExpandedStateChange -> {
                 state = state.copy(
                     isHealthPreferenceExpanded = !state.isHealthPreferenceExpanded
                 )
             }
 
-            MenuEvents.OnMealTypeExpandedStateChange -> {
+            AdminEvents.OnMealTypeExpandedStateChange -> {
                 state = state.copy(
                     isMealTypePreferenceExpanded = !state.isMealTypePreferenceExpanded
                 )
             }
 
-            is MenuEvents.OnSelectCousinePreference -> {
+            is AdminEvents.OnSelectCousinePreference -> {
                 val list = state.selectedCousineListPreferences.toMutableList()
                 list.add(event.cousineItem)
                 state = state.copy(
@@ -215,7 +226,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnSelectDietPreference -> {
+            is AdminEvents.OnSelectDietPreference -> {
                 val list = state.selectedDietListPreferences.toMutableList()
                 list.add(event.dietItem)
                 state = state.copy(
@@ -223,7 +234,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnSelectDishTypePreference -> {
+            is AdminEvents.OnSelectDishTypePreference -> {
                 val list = state.selectedDishTypePreferences.toMutableList()
                 list.add(event.dishTypeItem)
                 state = state.copy(
@@ -231,7 +242,7 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnSelectHealthPreference -> {
+            is AdminEvents.OnSelectHealthPreference -> {
                 val list = state.selectedHealthListPreferences.toMutableList()
                 list.add(event.healthItem)
                 state = state.copy(
@@ -239,13 +250,20 @@ class MenuViewModel @Inject constructor(
                 )
             }
 
-            is MenuEvents.OnSelectMealTypePreference -> {
+            is AdminEvents.OnSelectMealTypePreference -> {
                 val list = state.selectedMealTypePreferences.toMutableList()
                 list.add(event.mealTypeItem)
                 state = state.copy(
                     selectedMealTypePreferences = list
                 )
 
+            }
+
+            is AdminEvents.OnSelectDate -> {
+                state = state.copy(
+                    date = event.date
+                )
+                getReports()
             }
         }
     }
@@ -268,7 +286,7 @@ class MenuViewModel @Inject constructor(
         )
         viewModelScope.launch {
             state.image?.let {
-                menuRepository.addMenu(menu, it).onEach { resource ->
+                adminRepository.addMenu(menu, it).onEach { resource ->
                     when (resource) {
                         is Resource.Loading -> {
                             state = state.copy(isLoading = true)
@@ -307,6 +325,44 @@ class MenuViewModel @Inject constructor(
         }
 
 
+    }
+
+    private fun getReports() {
+        viewModelScope.launch {
+            adminRepository.getReports(state.date).onEach { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        state = state.copy(isLoading = true)
+                    }
+
+                    is Resource.Success -> {
+                        state = state.copy(
+                            reports = resource.data!!,
+                            isLoading = false,
+                            showEmptyScreen = false
+                        )
+                        if (state.reports?.totalSearches == 0L) { // Check if reports is empty
+                            state = state.copy(
+                                showEmptyScreen = true
+                            )
+                        }
+
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            errorMessage = resource.message ?: "",
+                            showErrorDialog = true,
+                            showEmptyScreen = false
+                        )
+                        Timber.tag("MenuViewModel")
+                            .e("Get Reports ${resource.message}")
+                    }
+                }
+
+            }.launchIn(this)
+        }
     }
 
     private fun validateMealName(): Boolean {

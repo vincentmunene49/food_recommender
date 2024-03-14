@@ -1,12 +1,12 @@
-package com.example.foodrecommenderapp.admin.menu.data
+package com.example.foodrecommenderapp.admin.common.data
 
 import android.net.Uri
-import androidx.compose.runtime.mutableStateOf
-import com.example.foodrecommenderapp.admin.menu.domain.MenuRepository
+import com.example.foodrecommenderapp.admin.common.domain.AdminRepository
 import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.constants.MENU_COLLECTION
-import com.google.firebase.auth.FirebaseAuth
+import com.example.foodrecommenderapp.common.constants.REPORT_COLLECTION
+import com.example.foodrecommenderapp.admin.report.model.Reports
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.async
@@ -18,11 +18,11 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
-class DefaultMenuRepositoryImplementation @Inject constructor(
+class DefaultAdminRepositoryImplementation @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val storage: FirebaseStorage
 
-) : MenuRepository {
+) : AdminRepository {
     override suspend fun addMenu(menu: Menu, imageUri: Uri) = flow {
         emit(Resource.Loading<Menu>())
         coroutineScope {
@@ -48,12 +48,18 @@ class DefaultMenuRepositoryImplementation @Inject constructor(
         }
     }
 
-    override suspend fun getAllMenus(): Flow<Resource<List<Menu>>> = flow {
+
+    override suspend fun getReports(date:String): Flow<Resource<Reports?>> = flow {
         emit(Resource.Loading())
+
         try {
-            val result = firebaseFirestore.collection(MENU_COLLECTION).get().await()
-            val menu = result.toObjects(Menu::class.java)
-            emit(Resource.Success(menu))
+            val result = firebaseFirestore.collection(REPORT_COLLECTION).document(date).get().await()
+            val reports = result.toObject(Reports::class.java)
+            if (reports != null) {
+                emit(Resource.Success(reports))
+            } else {
+                emit(Resource.Success(Reports())) // Emit an empty Reports object when data is null
+            }
         } catch (e: Exception) {
             if (e is CancellationException) {
                 throw e

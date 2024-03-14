@@ -87,6 +87,12 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.google.code.gson:gson:2.8.7")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    
+    implementation ("androidx.compose.material:material-icons-extended-android:1.6.3")
+
+    implementation ("com.maxkeppeler.sheets-compose-dialogs:core:1.2.0")
+    implementation ("com.maxkeppeler.sheets-compose-dialogs:calendar:1.2.0")
+
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -95,4 +101,5 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
 }
