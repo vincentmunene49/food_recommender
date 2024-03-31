@@ -16,7 +16,9 @@ sealed class AdminEvents {
 
     data class OnAddCategory(val category: String) : AdminEvents()
 
-    data class OnImageSelected(val imageUri: Uri) : AdminEvents()
+    data class OnFoodImageSelected(val imageUri: Uri) : AdminEvents()
+
+    data class OnCategoryImageSelected(val imageUri: Uri) : AdminEvents()
 
     data class OnAddIngredient(val index: Int, val ingredient: String) : AdminEvents()
 

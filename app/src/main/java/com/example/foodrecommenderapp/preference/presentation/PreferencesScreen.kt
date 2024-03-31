@@ -95,7 +95,7 @@ fun PreferencesScreenContent(
         }
     }) { paddingValues ->
 
-        if (state.preferenceMealList.isNullOrEmpty()) {
+        if (state.meals.isNullOrEmpty()) {
             EmptyResponse(modifier = Modifier.padding(paddingValues))
         } else {
 
@@ -104,14 +104,13 @@ fun PreferencesScreenContent(
                     .fillMaxWidth()
                     .padding(paddingValues)
             ) {
-                items(state.preferenceMealList) { hit ->
+                items(state.meals) { menu ->
                     MealCard(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        imagePath = hit.recipe.image,
-                        mealName = hit.recipe.label,
-                        healthList = hit.recipe.healthLabels,
-                        cautionList = hit.recipe.cautions,
-                        dietList = hit.recipe.dietLabels
+                        imagePath = menu.foodImage.toString(),
+                        mealName = menu.name,
+                        healthList = menu.preferences["health"],
+                        dietList = menu.preferences["diet"]
                     )
                 }
             }
@@ -128,7 +127,6 @@ fun MealCard(
     imagePath: String,
     mealName: String,
     healthList: List<String>?,
-    cautionList: List<String>?,
     dietList: List<String>?
 ) {
 
@@ -225,32 +223,6 @@ fun MealCard(
                     }
 
                 }
-                if (cautionList?.isNotEmpty() == true) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Caution: ",
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        FlowRow(
-                        ) {
-                            cautionList.forEach {
-                                Text(
-                                    text = if (it == cautionList.lastOrNull()) it else "$it,",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                        fontSize = 8.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                    }
-                }
                 Spacer(modifier = Modifier.height(5.dp))
 
 
@@ -292,9 +264,7 @@ fun PreviewMealCard() {
                 imagePath = "",
                 mealName = "BBQ and Sour Cream & Onion Chips",
                 healthList = HEALTHLISTLABELS,
-                dietList = DIETLISTLABELS,
-                cautionList = listOf("High in Sodium", "High in Fat")
-            )
+                dietList = DIETLISTLABELS)
         }
 
     }

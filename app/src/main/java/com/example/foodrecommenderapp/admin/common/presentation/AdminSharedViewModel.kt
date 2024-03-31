@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodrecommenderapp.admin.common.domain.AdminRepository
+import com.example.foodrecommenderapp.admin.menu.model.Category
 import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.UiEvent
@@ -46,12 +47,16 @@ class AdminSharedViewModel @Inject constructor(
             }
 
             is AdminEvents.OnAddCategory -> {
-                state = state.copy(mealCategory = event.category)
+                state = state.copy(categoryName = event.category)
                 validateCategory()
             }
 
-            is AdminEvents.OnImageSelected -> {
-                state = state.copy(image = event.imageUri)
+            is AdminEvents.OnCategoryImageSelected -> {
+                state = state.copy(categoryImage = event.imageUri)
+            }
+
+            is AdminEvents.OnFoodImageSelected -> {
+                state = state.copy(foodImage = event.imageUri)
                 Timber.tag("MenuViewModel").d("Image uri: ${event.imageUri}")
             }
 
@@ -271,8 +276,9 @@ class AdminSharedViewModel @Inject constructor(
     private fun createMenu() {
         val menu = Menu(
             name = state.mealName ?: "",
-            category = state.mealCategory ?: "",
-            image = state.image,
+            categoryName = state.categoryName ?: "",
+            categoryImage = state.categoryImage,
+            foodImage = state.foodImage,
             ingredients = state.ingredients.filter {
                 it.isNotEmpty()
             },
@@ -284,43 +290,57 @@ class AdminSharedViewModel @Inject constructor(
                 "dishType" to state.selectedDishTypePreferences
             )
         )
+
+        val category = Category(
+            name = state.categoryName ?: "",
+            image = state.categoryImage
+        )
+
         viewModelScope.launch {
-            state.image?.let {
-                adminRepository.addMenu(menu, it).onEach { resource ->
-                    when (resource) {
-                        is Resource.Loading -> {
-                            state = state.copy(isLoading = true)
-                        }
+            state.foodImage?.let { foodImage ->
+                state.categoryImage?.let { categoryImage ->
+                    adminRepository.addMenu(
+                        menu = menu,
+                        foodImage = foodImage,
+                        category = category,
+                        categoryImage = categoryImage
+                    )
+                        .onEach { resource ->
+                            when (resource) {
+                                is Resource.Loading -> {
+                                    state = state.copy(isLoading = true)
+                                }
 
-                        is Resource.Success -> {
-                            state = state.copy(
-                                isLoading = false,
-                                showSuccessDialog = true,
-                                mealName = "",
-                                mealCategory = "",
-                                image = null,
-                                ingredients = mutableStateListOf(),
-                                selectedHealthListPreferences = emptyList(),
-                                selectedDietListPreferences = emptyList(),
-                                selectedCousineListPreferences = emptyList(),
-                                selectedMealTypePreferences = emptyList(),
-                                selectedDishTypePreferences = emptyList()
-                            )
+                                is Resource.Success -> {
+                                    state = state.copy(
+                                        isLoading = false,
+                                        showSuccessDialog = true,
+                                        mealName = "",
+                                        categoryName = "",
+                                        foodImage = null,
+                                        ingredients = mutableStateListOf(),
+                                        selectedHealthListPreferences = emptyList(),
+                                        selectedDietListPreferences = emptyList(),
+                                        selectedCousineListPreferences = emptyList(),
+                                        selectedMealTypePreferences = emptyList(),
+                                        selectedDishTypePreferences = emptyList()
+                                    )
 
-                        }
+                                }
 
-                        is Resource.Error -> {
-                            state = state.copy(
-                                isLoading = false,
-                                errorMessage = resource.message ?: "",
-                                showErrorDialog = true
-                            )
-                            Timber.tag("MenuViewModel")
-                                .e("Error creating menu: ${resource.message}")
-                        }
-                    }
+                                is Resource.Error -> {
+                                    state = state.copy(
+                                        isLoading = false,
+                                        errorMessage = resource.message ?: "",
+                                        showErrorDialog = true
+                                    )
+                                    Timber.tag("MenuViewModel")
+                                        .e("Error creating menu: ${resource.message}")
+                                }
+                            }
 
-                }.launchIn(this)
+                        }.launchIn(this)
+                }
             }
         }
 
@@ -372,7 +392,7 @@ class AdminSharedViewModel @Inject constructor(
     }
 
     private fun validateCategory(): Boolean {
-        val categoryResult = formValidator.validateMealField(state.mealCategory ?: "")
+        val categoryResult = formValidator.validateMealField(state.categoryName ?: "")
         state = state.copy(categoryErrorMessage = categoryResult.errorMessage ?: "")
         return categoryResult.successful
     }

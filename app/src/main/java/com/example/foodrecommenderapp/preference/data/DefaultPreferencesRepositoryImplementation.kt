@@ -18,7 +18,6 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 class DefaultPreferencesRepositoryImplementation @Inject constructor(
-    private val repository: PreferenceGeneratorService,
     private val fireStoreDb: FirebaseFirestore
 ) : PreferenceRepository {
     override suspend fun getMealByPreferences(
@@ -27,18 +26,23 @@ class DefaultPreferencesRepositoryImplementation @Inject constructor(
         cuisineType: List<String>,
         mealType: List<String>,
         dishType: List<String>
-    ): Flow<Resource<GenerateMeal>> = flow {
+    ): Flow<Resource<List<Menu>>> = flow {
 
         emit(Resource.Loading())
         try {
-            val response = repository.getFoodFromPreferences(
-                health = health,
-                diet = diet,
-                cuisineType = cuisineType,
-                mealType = mealType,
-                dishType = dishType
-            )
-            emit(Resource.Success(response))
+            val response = fireStoreDb.collection(MENU_COLLECTION)
+                .whereArrayContainsAny("health", health)
+                .whereArrayContainsAny("diet", diet)
+                .whereArrayContainsAny("cuisineType", cuisineType)
+                .whereArrayContainsAny("mealType", mealType)
+                .whereArrayContainsAny("dishType", dishType)
+                .get().await()
+                .toObjects(Menu::class.java)
+            if(response.isEmpty()){
+                emit(Resource.Success(emptyList()))
+            }else {
+                emit(Resource.Success(response))
+            }
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred"))
         }

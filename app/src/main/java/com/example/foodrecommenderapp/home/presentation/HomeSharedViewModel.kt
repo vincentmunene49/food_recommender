@@ -35,8 +35,7 @@ class HomeSharedViewModel @Inject constructor(
     val uiEvent = _uiEvent.receiveAsFlow()
 
     init {
-        getRandomMeal()
-        getMealByFirstLetter("c")
+        getMeals()
         getMealCategories()
     }
 
@@ -250,41 +249,10 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
-    private fun getRandomMeal() {
-        viewModelScope.launch {
-            repository.getRandomMeal().onEach {
-                when (it) {
-                    is Resource.Success -> {
-                        state = state.copy(
-                            isLoading = false,
-                            meals = it.data
-                        )
-                        Timber.tag("HomeViewModel").d("getRandomMeal: ${it.data}")
-                    }
-
-                    is Resource.Error -> {
-                        state = state.copy(
-                            isLoading = false,
-                            error = it.message ?: "An unexpected error occurred",
-                            showErrorDialog = true
-                        )
-                        Timber.tag("HomeViewmodel").d("getRandomMealError: ${it.message}")
-                    }
-
-                    is Resource.Loading -> {
-                        state = state.copy(
-                            isLoading = true
-                        )
-                    }
-                }
-            }.launchIn(this)
-
-        }
-    }
 
     private fun getMealByFirstLetter(searchTerm: String) {
         viewModelScope.launch {
-            repository.getMealByFirstLetter(searchTerm).onEach {
+            repository.searchMeal(searchTerm).onEach {
                 when (it) {
                     is Resource.Success -> {
                         state = state.copy(
@@ -341,6 +309,34 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
+    private fun getMeals(){
+        viewModelScope.launch {
+            repository.getMeals().onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false,
+                            meals = it.data
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
     private fun getMealByPreference() {
         viewModelScope.launch {
             preferenceRepository.getMealByPreferences(
@@ -355,9 +351,9 @@ class HomeSharedViewModel @Inject constructor(
                         state = state.copy(
                             isPreferencesLoading = false,
                             showPreferenceLoadingDialog = false,
-                            preferenceMealList = it.data?.hits ?: emptyList()
+                            meals = it.data?: emptyList()
                         )
-                        Timber.tag("HomeViewModel").d("getMealByPreference: ${it.data?.hits}")
+                        Timber.tag("HomeViewModel").d("getMealByPreference: ${it.data}")
                         _uiEvent.send(UiEvent.OnSuccess("Navigate to preference meal screen"))
                     }
 

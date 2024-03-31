@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -247,12 +248,14 @@ fun HomeScreenContent(
             )
 
             LazyRow {
-                items(state.categories?.categories ?: emptyList()) { category ->
-                    MealComponent(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        foodCategory = category.strCategory,
-                        foodImage = category.strCategoryThumb
-                    )
+                items(state.categories?: emptyList()) { category ->
+                    category.image?.let {image ->
+                        MealComponent(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            foodCategory = category.name,
+                            foodImage = image
+                        )
+                    }
                 }
 
             }
@@ -274,13 +277,13 @@ fun HomeScreenContent(
             ) {
 
                 state.meals?.let { mealList ->
-                    items(mealList.meals) { meal ->
+                    items(mealList) { meal ->
                         AllMealsComponent(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             onClickFood = { /*TODO*/ },
-                            imagePath = meal.strMealThumb,
-                            foodTitle = meal.strMeal,
-                            foodCategory = meal.strCategory
+                            imagePath = meal.foodImage,
+                            foodTitle = meal.name,
+                            foodCategory = meal.categoryName
                         )
                     }
                 }
@@ -418,13 +421,23 @@ fun MealComponent(
                 .background(color = Color(0XFFF7F7F7)),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                modifier = Modifier.size(60.dp),
-                model = foodImage,
-                contentDescription = null,
-                placeholder = painterResource(id = R.drawable.meal),
-                contentScale = ContentScale.Crop
-            )
+            if(foodImage.isNotEmpty() && foodImage.isNotBlank() && foodImage!=""){
+                AsyncImage(
+                    modifier = Modifier.size(60.dp),
+                    model = foodImage,
+                    contentDescription = null,
+                    placeholder = painterResource(id = R.drawable.meal),
+                    contentScale = ContentScale.Crop
+                )
+            }else{
+                Icon(
+                    modifier = Modifier.size(60.dp),
+                    imageVector = Icons.Default.Fastfood,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
 
         }
         Text(

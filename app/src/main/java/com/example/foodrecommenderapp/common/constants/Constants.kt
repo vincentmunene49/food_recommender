@@ -6,6 +6,8 @@ const val ADMIN_COLLECTION = "admin_users"
 
 const val MENU_COLLECTION = "menu"
 
+const val CATEGORY_COLLECTION = "category"
+
 const val REPORT_COLLECTION = "reports"
 
 

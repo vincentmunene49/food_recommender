@@ -2,11 +2,13 @@ package com.example.foodrecommenderapp.admin.common.data
 
 import android.net.Uri
 import com.example.foodrecommenderapp.admin.common.domain.AdminRepository
+import com.example.foodrecommenderapp.admin.menu.model.Category
 import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.constants.MENU_COLLECTION
 import com.example.foodrecommenderapp.common.constants.REPORT_COLLECTION
 import com.example.foodrecommenderapp.admin.report.model.Reports
+import com.example.foodrecommenderapp.common.constants.CATEGORY_COLLECTION
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.async
@@ -23,7 +25,7 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
     private val storage: FirebaseStorage
 
 ) : AdminRepository {
-    override suspend fun addMenu(menu: Menu, imageUri: Uri) = flow {
+    override suspend fun addMenu(menu: Menu, foodImage: Uri, category: Category, categoryImage: Uri) = flow {
         emit(Resource.Loading<Menu>())
         coroutineScope {
             val menuUpload = async {
@@ -31,14 +33,25 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
                     .set(menu).await()
             }
             val imageUpload = async {
-                val imageRef = storage.reference.child("images/${UUID.randomUUID()}")
-                imageRef.putFile(imageUri).await()
+                val imageRef = storage.reference.child("images/foodImages/${UUID.randomUUID()}")
+                imageRef.putFile(foodImage).await()
+                imageRef.downloadUrl.await()
+            }
+            val categoryUpload = async {
+                firebaseFirestore.collection(CATEGORY_COLLECTION).document(UUID.randomUUID().toString())
+                    .set(category).await()
+            }
+            val categoryImageUpload = async {
+                val imageRef = storage.reference.child("images/categoryImages/${UUID.randomUUID()}")
+                imageRef.putFile(categoryImage).await()
                 imageRef.downloadUrl.await()
             }
             try {
                 menuUpload.await()
-                val imageUrl = imageUpload.await()
-                emit(Resource.Success(menu.copy(image = imageUri)))
+                imageUpload.await()
+                categoryUpload.await()
+                categoryImageUpload.await()
+                emit(Resource.Success(menu.copy(foodImage = foodImage, categoryImage = categoryImage)))
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
