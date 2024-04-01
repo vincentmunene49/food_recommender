@@ -15,6 +15,7 @@ import com.example.foodrecommenderapp.admin.menu.presentation.MenuCreationScreen
 import com.example.foodrecommenderapp.admin.common.presentation.AdminSharedViewModel
 import com.example.foodrecommenderapp.auth.login.presentation.LoginScreen
 import com.example.foodrecommenderapp.auth.register.presentation.RegisterScreen
+import com.example.foodrecommenderapp.home.presentation.CommonHomeScreen
 import com.example.foodrecommenderapp.home.presentation.HomeScreen
 import com.example.foodrecommenderapp.home.presentation.HomeSharedViewModel
 import com.example.foodrecommenderapp.preference.presentation.PreferenceScreen
@@ -50,7 +51,7 @@ fun NavGraph() {
                 val viewModel =
                     it.sharedViewModel<HomeSharedViewModel>(navController = navController)
 
-                HomeScreen(
+                CommonHomeScreen(
                     viewModel = viewModel,
                     navController = navController
                 )

@@ -296,6 +296,45 @@ fun MenuCreationScreenContent(
             }
 
             item {
+                RecommenderAppTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    value = state.mealPrice?.toString() ?: "",
+                    onValueChange = {
+                        onEvent(AdminEvents.OnAddMealPrice(it))
+                    },
+                    label = {
+                        Text(text = "Price")
+                    },
+                    placeholder = {
+                        Text(text = "Ksh 0.00")
+                    },
+                    isError = isMealName && state.mealNameErrorMessage != null,
+                    supportingText = {
+                        state.mealPriceErrorMessage?.let {
+                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                        }
+
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(focusDirection = FocusDirection.Down) }
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        errorContainerColor = Color.Transparent,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            item {
                 Divider()
             }
 

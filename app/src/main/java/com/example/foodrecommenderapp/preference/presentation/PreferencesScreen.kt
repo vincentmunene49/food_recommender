@@ -3,6 +3,7 @@ package com.example.foodrecommenderapp.preference.presentation
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,8 +48,10 @@ import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
 import com.example.foodrecommenderapp.common.constants.DIETLISTLABELS
 import com.example.foodrecommenderapp.common.constants.HEALTHLISTLABELS
+import com.example.foodrecommenderapp.home.presentation.HomeScreenEvents
 import com.example.foodrecommenderapp.home.presentation.HomeSharedViewModel
 import com.example.foodrecommenderapp.home.presentation.HomeState
+import com.example.foodrecommenderapp.order.presentation.AddToOrderDialog
 import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 
 @Composable
@@ -58,7 +61,8 @@ fun PreferenceScreen(
 ) {
     PreferencesScreenContent(
         state = viewModel.state,
-        navController = navController
+        navController = navController,
+        onEvent = viewModel::onEvent
     )
 
 }
@@ -66,6 +70,7 @@ fun PreferenceScreen(
 @Composable
 fun PreferencesScreenContent(
     state: HomeState,
+    onEvent: (HomeScreenEvents) -> Unit,
     navController: NavController
 ) {
 
@@ -92,6 +97,16 @@ fun PreferencesScreenContent(
 
         }
     }) { paddingValues ->
+        if(state.showAddToOrderDialog){
+            AddToOrderDialog(
+                onDismissDialog = { onEvent(HomeScreenEvents.OnDismissAddToOrderDialog) },
+                onClickCancel = { onEvent(HomeScreenEvents.OnClickCancelAddToOrder) },
+                onClickConfirm = { onEvent(HomeScreenEvents.OnClickConfirmAddToOrder) },
+                title = "Are you sure you want to order this meal?",
+                confirmTitle = "Order",
+                cancelTitle = "Cancel"
+            )
+        }
 
         if (state.meals.isNullOrEmpty()) {
             EmptyResponse(modifier = Modifier.padding(paddingValues))
@@ -108,7 +123,10 @@ fun PreferencesScreenContent(
                         imagePath = menu.image.toString(),
                         mealName = menu.name,
                         healthList = menu.preferences["health"],
-                        dietList = menu.preferences["diet"]
+                        dietList = menu.preferences["diet"],
+                        onClick = {
+                            onEvent(HomeScreenEvents.OnClickPreferencesCard)
+                        }
                     )
                 }
             }
@@ -125,12 +143,16 @@ fun MealCard(
     imagePath: String,
     mealName: String,
     healthList: List<String>?,
-    dietList: List<String>?
+    dietList: List<String>?,
+    price: String? = null,
+    onClick: () -> Unit = {}
 ) {
 
     Card(
         modifier = modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .clip(RoundedCornerShape(10.dp)),
         colors = CardDefaults.cardColors(
             containerColor = if (isSystemInDarkTheme()) Color(0xFF4D4D4D) else Color.White,
         ),
@@ -225,6 +247,14 @@ fun MealCard(
 
 
             }
+            Text(
+                modifier = Modifier
+                    .padding(end = 8.dp, top = 8.dp)
+                    .align(Alignment.Top),
+                text = "Ksh $price",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
         }
     }
 
@@ -262,7 +292,9 @@ fun PreviewMealCard() {
                 imagePath = "",
                 mealName = "BBQ and Sour Cream & Onion Chips",
                 healthList = HEALTHLISTLABELS,
-                dietList = DIETLISTLABELS)
+                dietList = DIETLISTLABELS,
+                price = "500"
+            )
         }
 
     }

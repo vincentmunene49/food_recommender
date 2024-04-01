@@ -1,10 +1,24 @@
 package com.example.foodrecommenderapp.home.presentation
 
+import com.example.foodrecommenderapp.admin.menu.model.Menu
+import com.example.foodrecommenderapp.order.data.model.Order
+
 sealed class HomeScreenEvents {
     object OnClickLaunch : HomeScreenEvents()
 
     object OnDismissShowPreferencesDialog : HomeScreenEvents()
+
+    object OnClickPreferencesCard : HomeScreenEvents()
+
+
+    object OnDismissAddToOrderDialog : HomeScreenEvents()
     data class OnSearchTermChanged(val searchTerm: String) : HomeScreenEvents()
+
+    data class OnClickMenu(val menu: Menu) : HomeScreenEvents()
+
+    object OnClickConfirmAddToOrder : HomeScreenEvents()
+
+    object OnClickCancelAddToOrder : HomeScreenEvents()
 
     object OnClickOk : HomeScreenEvents()
 
@@ -52,16 +66,16 @@ sealed class HomeScreenEvents {
 
     object OnDismissDishTypeDropDown : HomeScreenEvents()
 
-    object OnHealthExpandedStateChange: HomeScreenEvents()
+    object OnHealthExpandedStateChange : HomeScreenEvents()
 
-    object OnDietExpandedStateChange: HomeScreenEvents()
+    object OnDietExpandedStateChange : HomeScreenEvents()
 
-    object OnCousineExpandedStateChange: HomeScreenEvents()
+    object OnCousineExpandedStateChange : HomeScreenEvents()
 
-    object OnMealTypeExpandedStateChange: HomeScreenEvents()
+    object OnMealTypeExpandedStateChange : HomeScreenEvents()
 
-    object OnDishTypeExpandedStateChange: HomeScreenEvents()
-
+    object OnDishTypeExpandedStateChange : HomeScreenEvents()
+    data class DeleteOrder(val order: Order) : HomeScreenEvents()
 
 
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
 import com.example.foodrecommenderapp.common.UiEvent
@@ -74,8 +76,11 @@ import com.example.foodrecommenderapp.common.constants.HEALTHLISTLABELS
 import com.example.foodrecommenderapp.common.constants.MEALTYPELIST
 import com.example.foodrecommenderapp.common.presentation.components.RecommenderAppButton
 import com.example.foodrecommenderapp.navigation.Route
+import com.example.foodrecommenderapp.order.presentation.AddToOrderDialog
 import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 
 
 @Composable
@@ -96,33 +101,25 @@ fun HomeScreen(
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
     state: HomeState,
-    uiEvent:Flow<UiEvent>,
+    uiEvent: Flow<UiEvent>,
     onEvent: (HomeScreenEvents) -> Unit = { },
     navController: NavController
 ) {
 
-    LaunchedEffect(key1 = true){
+    LaunchedEffect(key1 = true) {
         uiEvent.collect { event ->
-            when(event){
+            when (event) {
                 is UiEvent.OnSuccess -> {
                     navController.navigate(route = Route.Preference.route)
                 }
-                else->{}
+
+                else -> {}
             }
         }
 
     }
 
     Scaffold(
-        topBar = {
-            Text(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-                text = "Explore",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 24.sp)
-            )
-
-        },
         floatingActionButton = {
             IconButton(
                 onClick = { onEvent(HomeScreenEvents.OnClickLaunch) }
@@ -148,6 +145,17 @@ fun HomeScreenContent(
         },
 
         ) { paddingValues ->
+
+        if (state.showAddToOrderDialog) {
+            AddToOrderDialog(
+                onDismissDialog = { onEvent(HomeScreenEvents.OnDismissAddToOrderDialog) },
+                onClickCancel = { onEvent(HomeScreenEvents.OnClickCancelAddToOrder) },
+                onClickConfirm = { onEvent(HomeScreenEvents.OnClickConfirmAddToOrder) },
+                title = "Are you sure you want to order this meal?",
+                confirmTitle = "Order",
+                cancelTitle = "Cancel"
+            )
+        }
 
 
         if (state.showPreferencesDialog) {
@@ -227,11 +235,12 @@ fun HomeScreenContent(
                 )
 
             }
-            if(state.isPreferencesLoading){
+            if (state.isPreferencesLoading) {
                 LoadingComponent(
                     onDismiss = { onEvent(HomeScreenEvents.OnDismissShowPreferencesDialog) }
                 )
             }
+
             SearchBoxComponent(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -248,8 +257,8 @@ fun HomeScreenContent(
             )
 
             LazyRow {
-                items(state.categories?: emptyList()) { category ->
-                    category.image?.let {image ->
+                items(state.categories ?: emptyList()) { category ->
+                    category.image?.let { image ->
                         MealComponent(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             foodCategory = category.name,
@@ -279,13 +288,14 @@ fun HomeScreenContent(
 
                 state.meals?.let { mealList ->
                     items(mealList) { meal ->
-                        meal.image?.let { image->
+                        meal.image?.let { image ->
                             AllMealsComponent(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                onClickFood = { /*TODO*/ },
+                                onClickFood = { onEvent(HomeScreenEvents.OnClickMenu(meal)) },
                                 imagePath = image,
                                 foodTitle = meal.name,
-                                foodCategory = meal.category
+                                foodCategory = meal.category,
+                                price = meal.price.toString()
                             )
                         }
                     }
@@ -366,7 +376,8 @@ fun AllMealsComponent(
     onClickFood: () -> Unit,
     imagePath: String,
     foodTitle: String,
-    foodCategory: String
+    foodCategory: String,
+    price: String
 ) {
     Card(
         modifier = modifier
@@ -383,14 +394,14 @@ fun AllMealsComponent(
                     .clip(RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if(imagePath.isNotBlank() && imagePath.isNotEmpty()) {
+                if (imagePath.isNotBlank() && imagePath.isNotEmpty()) {
                     AsyncImage(
                         model = imagePath,
                         contentDescription = null,
                         contentScale = ContentScale.Crop, // Use Crop to ensure the image fills the circular shape
                         placeholder = painterResource(id = R.drawable.food)
                     )
-                }else{
+                } else {
                     Icon(
                         imageVector = Icons.Default.Fastfood,
                         contentDescription = null,
@@ -399,19 +410,33 @@ fun AllMealsComponent(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
+            Column(
+            ) {
+                Text(
+                    modifier = Modifier.padding(start = 4.dp),
+                    text = foodTitle,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Row {
 
-            Text(
-                modifier = Modifier.padding(start = 4.dp),
-                text = foodTitle,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                modifier = Modifier.padding(start = 4.dp),
-                text = foodCategory,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
+                    Text(
+                        modifier = Modifier.padding(start = 4.dp),
+                        text = foodCategory,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.width(18.dp))
+                    Text(
+                        text = "Ksh $price",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+
+
+            }
+
 
         }
     }
@@ -435,7 +460,7 @@ fun MealComponent(
                 .clip(RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
-            if(foodImage.isNotEmpty() && foodImage.isNotBlank()) {
+            if (foodImage.isNotEmpty() && foodImage.isNotBlank()) {
                 AsyncImage(
                     modifier = Modifier.size(60.dp),
                     model = foodImage,
@@ -443,14 +468,13 @@ fun MealComponent(
                     placeholder = painterResource(id = R.drawable.food),
                     contentScale = ContentScale.Crop
                 )
-            }else{
+            } else {
                 Icon(
                     imageVector = Icons.Default.Fastfood,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-
 
 
         }
@@ -507,7 +531,7 @@ fun PreferencesComponent(
 ) {
 
     val dropDownBoxList = listOf(
-        HEALTHLISTLABELS.map{it.lowercase()},
+        HEALTHLISTLABELS.map { it.lowercase() },
         DIETLISTLABELS.map { it.lowercase() },
         CUISINELISTLABELS.map { it.lowercase() },
         DISHTYPELIST.map { it.lowercase() },
@@ -644,7 +668,7 @@ fun LoadingComponent(
             )
         }
     }
-    
+
 }
 
 //exposed drop down menu
@@ -752,44 +776,12 @@ fun DropDownMenu(
 @Composable
 fun PreviewHomeScreen() {
     FoodRecommenderAppTheme {
-        PreferencesComponent(
-            onDismiss = {},
-            onClickOk = {},
-            onClickHealthDoneAction = {},
-            onClickDietDoneAction = {},
-            onClickCuisineDoneAction = {},
-            onClickDishTypeDoneAction = {},
-            onClickMealTypeDoneAction = {},
-            selectedHealthList = emptyList(),
-            selectedDietList = emptyList(),
-            selectedCuisineList = emptyList(),
-            selectedDishTypeList = emptyList(),
-            selectedMealTypeList = emptyList(),
-            onSelectHealthMenuItem = {},
-            onDeselectHealthMenuItem = {},
-            onSelectDietMenuItem = {},
-            onDeselectDietMenuItem = {},
-            onSelectCuisineMenuItem = {},
-            onDeselectCuisineMenuItem = {},
-            onSelectDishTypeMenuItem = {},
-            onDeselectDishTypeMenuItem = {},
-            onSelectMealTypeMenuItem = {},
-            onDeselectMealTypeMenuItem = {},
-            onDismissHealthDropDown = {},
-            onDismissDietDropDown = {},
-            onDismissCuisineDropDown = {},
-            onDismissDishTypeDropDown = {},
-            onDismissMealTypeDropDown = {},
-            onHealthExpandedChange = {},
-            onDietExpandedChange = {},
-            onCuisineExpandedChange = {},
-            onDishTypeExpandedChange = {},
-            onMealTypeExpandedChange = {},
-            isHealthPreferenceExpanded = false,
-            isDietPreferenceExpanded = false,
-            isCuisinePreferenceExpanded = false,
-            isDishTypePreferenceExpanded = false,
-            isMealTypePreferenceExpanded = false
+        AllMealsComponent(
+            onClickFood = { /*TODO*/ },
+            imagePath = "",
+            foodTitle = "Chicken Curry",
+            foodCategory = " BEEF",
+            price = "200"
         )
     }
 

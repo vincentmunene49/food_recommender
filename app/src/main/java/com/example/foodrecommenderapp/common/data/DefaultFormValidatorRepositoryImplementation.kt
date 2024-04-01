@@ -101,4 +101,23 @@ class DefaultFormValidatorRepositoryImplementation : FormValidatorRepository{
             errorMessage = null
         )
     }
+
+    override fun validateMealPrice(price: String): ValidationResult {
+        if(price.isBlank()){
+            return ValidationResult(
+                successful = false,
+                errorMessage = "The price field can not be blank"
+            )
+        }
+        if(price.isEmpty()){
+            return ValidationResult(
+                successful = false,
+                errorMessage = "The price field must be at least 1 characters long"
+            )
+        }
+        return ValidationResult(
+            successful = true,
+            errorMessage = null
+        )
+    }
 }

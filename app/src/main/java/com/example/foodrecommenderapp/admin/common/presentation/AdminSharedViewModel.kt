@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,6 +55,11 @@ class AdminSharedViewModel @Inject constructor(
             is AdminEvents.OnAddCategory -> {
                 state = state.copy(categoryName = event.category)
                 validateCategory()
+            }
+
+            is AdminEvents.OnAddMealPrice -> {
+                state = state.copy(mealPrice = event.price.toDouble())
+                validatePrice()
             }
 
             is AdminEvents.OnCategoryImageSelected -> {
@@ -294,7 +300,9 @@ class AdminSharedViewModel @Inject constructor(
                 "cousine" to state.selectedCousineListPreferences,
                 "mealType" to state.selectedMealTypePreferences,
                 "dishType" to state.selectedDishTypePreferences
-            )
+            ),
+            price = state.mealPrice,
+            adminId = UUID.randomUUID().toString()
         )
 
         val category = Category(
@@ -388,6 +396,44 @@ class AdminSharedViewModel @Inject constructor(
         }
     }
 
+    private fun getOrderReport() {
+        viewModelScope.launch {
+            adminRepository.getOrderReport().onEach { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        state = state.copy(isLoading = true)
+                    }
+
+                    is Resource.Success -> {
+                        state = state.copy(
+                            orders = resource.data!!,
+                            isLoading = false,
+                            showEmptyScreen = false
+                        )
+                        if (state.orders.isNullOrEmpty()) { // Check if reports is empty
+                            state = state.copy(
+                                showEmptyScreen = true
+                            )
+                        }
+
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            errorMessage = resource.message ?: "",
+                            showErrorDialog = true,
+                            showEmptyScreen = false
+                        )
+                        Timber.tag("MenuViewModel")
+                            .e("Get Reports ${resource.message}")
+                    }
+                }
+
+            }.launchIn(this)
+        }
+    }
+
     private fun validateMealName(): Boolean {
         val mealNameResult = formValidator.validateMealField(state.mealName ?: "")
         state = state.copy(mealNameErrorMessage = mealNameResult.errorMessage ?: "")
@@ -398,5 +444,11 @@ class AdminSharedViewModel @Inject constructor(
         val categoryResult = formValidator.validateMealField(state.categoryName ?: "")
         state = state.copy(categoryErrorMessage = categoryResult.errorMessage ?: "")
         return categoryResult.successful
+    }
+
+    private fun validatePrice(): Boolean {
+        val priceResult = formValidator.validateMealPrice(state.mealPrice.toString())
+        state = state.copy(mealPriceErrorMessage = priceResult.errorMessage ?: "")
+        return priceResult.successful
     }
 }

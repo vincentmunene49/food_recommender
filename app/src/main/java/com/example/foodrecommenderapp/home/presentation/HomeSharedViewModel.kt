@@ -5,11 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.home.domain.HomeRepository
 import com.example.foodrecommenderapp.preference.domain.PreferenceRepository
 import com.example.foodrecommenderapp.admin.report.model.Reports
+import com.example.foodrecommenderapp.order.data.model.Order
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
@@ -37,6 +39,7 @@ class HomeSharedViewModel @Inject constructor(
     init {
         getMeals()
         getMealCategories()
+        getOrder()
     }
 
     fun onEvent(event: HomeScreenEvents) {
@@ -56,6 +59,19 @@ class HomeSharedViewModel @Inject constructor(
                 }else{
                     getMeals()
                 }
+            }
+
+            HomeScreenEvents.OnClickPreferencesCard -> {
+                state = state.copy(
+                    showAddToOrderDialog = true
+                )
+            }
+
+
+            HomeScreenEvents.OnDismissAddToOrderDialog -> {
+                state = state.copy(
+                    showAddToOrderDialog = false
+                )
             }
 
             HomeScreenEvents.OnDismissShowPreferencesDialog -> {
@@ -256,6 +272,30 @@ class HomeSharedViewModel @Inject constructor(
                     selectedCategory = event.categoryName
                 )
                 getMealByCategories(state.selectedCategory)
+            }
+
+            is HomeScreenEvents.OnClickMenu -> {
+                state = state.copy(
+                    menu = event.menu,
+                    showAddToOrderDialog = true
+                )
+
+            }
+
+            HomeScreenEvents.OnClickCancelAddToOrder -> {
+                state = state.copy(
+                    showAddToOrderDialog = false
+                )
+            }
+            HomeScreenEvents.OnClickConfirmAddToOrder -> {
+                addOrder()
+                state = state.copy(
+                    showAddToOrderDialog = false
+                )
+            }
+
+            is HomeScreenEvents.DeleteOrder -> {
+                deleteOrder(event.order)
             }
         }
     }
@@ -469,6 +509,101 @@ class HomeSharedViewModel @Inject constructor(
                     is Resource.Loading -> {
                         state = state.copy(
                             isLoading = true,
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun addOrder() {
+        val order = Order(
+            menu = state.menu ?: Menu()
+        )
+        viewModelScope.launch {
+            repository.addOrder(order).onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false
+                        )
+                        getOrder()
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun getOrder(){
+        viewModelScope.launch {
+            repository.getOrders().onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false,
+                            orders = it.data,
+                            totalPrice = it.data?.sumOf { order -> order.menu.price ?: 0.0 } ?: 0.0
+                        )
+
+                        Timber.tag("HomeViewModel").d("getOrders: ${it.data}")
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                        Timber.tag("HomeViewModel").d("getOrdersError: ${it.message}")
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun deleteOrder(order: Order){
+        viewModelScope.launch {
+            repository.deleteOrder(order).onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false
+                        ).also {
+                            getOrder()
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
                         )
                     }
                 }
