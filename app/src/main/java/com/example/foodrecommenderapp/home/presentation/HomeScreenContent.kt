@@ -1,5 +1,6 @@
 package com.example.foodrecommenderapp.home.presentation
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +29,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -61,7 +63,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
@@ -247,12 +248,15 @@ fun HomeScreenContent(
             )
 
             LazyRow {
-                items(state.categories?.categories ?: emptyList()) { category ->
-                    MealComponent(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        foodCategory = category.strCategory,
-                        foodImage = category.strCategoryThumb
-                    )
+                items(state.categories?: emptyList()) { category ->
+                    category.image?.let {image ->
+                        MealComponent(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            foodCategory = category.name,
+                            foodImage = image,
+                            onCLick = { onEvent(HomeScreenEvents.OnClickCategory(category.name)) }
+                        )
+                    }
                 }
 
             }
@@ -274,14 +278,16 @@ fun HomeScreenContent(
             ) {
 
                 state.meals?.let { mealList ->
-                    items(mealList.meals) { meal ->
-                        AllMealsComponent(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            onClickFood = { /*TODO*/ },
-                            imagePath = meal.strMealThumb,
-                            foodTitle = meal.strMeal,
-                            foodCategory = meal.strCategory
-                        )
+                    items(mealList) { meal ->
+                        meal.image?.let { image->
+                            AllMealsComponent(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                onClickFood = { /*TODO*/ },
+                                imagePath = image,
+                                foodTitle = meal.name,
+                                foodCategory = meal.category
+                            )
+                        }
                     }
                 }
 
@@ -373,16 +379,24 @@ fun AllMealsComponent(
         Column {
             Box(
                 modifier = Modifier
-                    .size(150.dp) // Adjust the size as needed
+                    .size(150.dp)
                     .clip(RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = imagePath,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop, // Use Crop to ensure the image fills the circular shape
-                    placeholder = painterResource(id = R.drawable.meal)
-                )
+                if(imagePath.isNotBlank() && imagePath.isNotEmpty()) {
+                    AsyncImage(
+                        model = imagePath,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop, // Use Crop to ensure the image fills the circular shape
+                        placeholder = painterResource(id = R.drawable.food)
+                    )
+                }else{
+                    Icon(
+                        imageVector = Icons.Default.Fastfood,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -410,21 +424,34 @@ fun MealComponent(
     modifier: Modifier = Modifier,
     foodCategory: String,
     foodImage: String,
+    onCLick: (String) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(color = Color(0XFFF7F7F7)),
+                .background(color = Color(0XFFF7F7F7))
+                .clickable { onCLick(foodCategory) }
+                .clip(RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                modifier = Modifier.size(60.dp),
-                model = foodImage,
-                contentDescription = null,
-                placeholder = painterResource(id = R.drawable.meal),
-                contentScale = ContentScale.Crop
-            )
+            if(foodImage.isNotEmpty() && foodImage.isNotBlank()) {
+                AsyncImage(
+                    modifier = Modifier.size(60.dp),
+                    model = foodImage,
+                    contentDescription = null,
+                    placeholder = painterResource(id = R.drawable.food),
+                    contentScale = ContentScale.Crop
+                )
+            }else{
+                Icon(
+                    imageVector = Icons.Default.Fastfood,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+
 
         }
         Text(

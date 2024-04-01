@@ -25,13 +25,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -44,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -51,8 +49,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
 import com.example.foodrecommenderapp.admin.common.presentation.AdminEvents
@@ -87,6 +83,7 @@ fun MenuCreationScreenContent(
 ) {
 
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     val dropDownBoxList = listOf(
         HEALTHLISTLABELS.map { it.lowercase() },
@@ -104,8 +101,22 @@ fun MenuCreationScreenContent(
 
     val imagePicker =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
-            onEvent(AdminEvents.OnImageSelected(uri!!))
+            val byteArray:ByteArray? = uri?.let {
+                context.contentResolver.openInputStream(it)?.use {inputStream->
+                    inputStream.readBytes()
+                }
+            }
+            onEvent(AdminEvents.OnFoodImageSelected(uri,byteArray))
         }
+
+    val categoryImagePicker = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
+        val byteArray:ByteArray? = uri?.let {
+            context.contentResolver.openInputStream(it)?.use {inputStream->
+                inputStream.readBytes()
+            }
+        }
+        onEvent(AdminEvents.OnCategoryImageSelected(byteArray,uri))
+    }
 
     Box(
         modifier = modifier
@@ -138,8 +149,7 @@ fun MenuCreationScreenContent(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
+                    horizontalArrangement = Arrangement.Center) {
 
                     Box(
                         modifier = Modifier
@@ -154,7 +164,7 @@ fun MenuCreationScreenContent(
                             .size(120.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (mutableStateOf(state.image).value == null) {
+                        if (mutableStateOf(state.foodImageUri).value == null) {
                             Image(
                                 painter = painterResource(id = R.drawable.add_photo),
                                 contentDescription = null,
@@ -162,7 +172,7 @@ fun MenuCreationScreenContent(
                             )
                         } else {
                             AsyncImage(
-                                model = mutableStateOf(state.image).value ?: "",
+                                model = mutableStateOf(state.foodImage).value ?: "",
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 placeholder = painterResource(id = R.drawable.add_photo)
@@ -212,39 +222,77 @@ fun MenuCreationScreenContent(
 
 
             item {
-                RecommenderAppTextField(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    value = state.mealCategory ?: "",
-                    onValueChange = {
-                        onEvent(AdminEvents.OnAddCategory(it))
-                    },
-                    label = {
-                        Text(text = "Meal Category")
-                    },
-                    isError = isCategoryFocused && state.categoryErrorMessage != null,
-                    supportingText = {
-                        state.categoryErrorMessage?.let {
-                            Text(text = it, color = MaterialTheme.colorScheme.error)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = CircleShape
+                            )
+                            .clickable {
+                                categoryImagePicker.launch("image/*")
+                                //call viewmodle to upload image
+                            }
+                            .size(50.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (mutableStateOf(state.categoryImageUri).value == null) {
+                            Image(
+                                painter = painterResource(id = R.drawable.add_photo),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            AsyncImage(
+                                model = mutableStateOf(state.foodImage).value ?: "",
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.add_photo)
+                            )
                         }
 
-                    },
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { focusManager.clearFocus() }
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        errorContainerColor = Color.Transparent,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                    }
+
+                    RecommenderAppTextField(
+                        modifier = Modifier.weight(1f),
+                        value = state.categoryName ?: "",
+                        onValueChange = {
+                            onEvent(AdminEvents.OnAddCategory(it))
+                        },
+                        label = {
+                            Text(text = "Meal Category")
+                        },
+                        isError = isCategoryFocused && state.categoryErrorMessage != null,
+                        supportingText = {
+                            state.categoryErrorMessage?.let {
+                                Text(text = it, color = MaterialTheme.colorScheme.error)
+                            }
+
+                        },
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        ),
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            errorContainerColor = Color.Transparent,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.primary
+                        )
                     )
-                )
+                }
+
             }
 
             item {

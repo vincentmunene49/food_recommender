@@ -14,11 +14,11 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 class DefaultPreferencesRepositoryImplementation @Inject constructor(
-    private val repository: PreferenceGeneratorService,
     private val fireStoreDb: FirebaseFirestore
 ) : PreferenceRepository {
     override suspend fun getMealByPreferences(
@@ -27,24 +27,56 @@ class DefaultPreferencesRepositoryImplementation @Inject constructor(
         cuisineType: List<String>,
         mealType: List<String>,
         dishType: List<String>
-    ): Flow<Resource<GenerateMeal>> = flow {
+    ): Flow<Resource<List<Menu>>> = flow {
 
         emit(Resource.Loading())
         try {
-            val response = repository.getFoodFromPreferences(
-                health = health,
-                diet = diet,
-                cuisineType = cuisineType,
-                mealType = mealType,
-                dishType = dishType
-            )
-            emit(Resource.Success(response))
+            val healthResponse = fireStoreDb.collection(MENU_COLLECTION)
+                .whereArrayContainsAny("preferences.health", health)
+                .get().await()
+                .toObjects(Menu::class.java)
+            Timber.tag("getMealByPreferences").d("healthResponse size: ${healthResponse.size}")
+
+
+            val dietResponse = fireStoreDb.collection(MENU_COLLECTION)
+                .whereArrayContainsAny("preferences.diet", diet)
+                .get().await()
+                .toObjects(Menu::class.java)
+            Timber.tag("getMealByPreferences").d("dietResponse size: ${dietResponse.size}")
+
+            val cuisineTypeResponse = fireStoreDb.collection(MENU_COLLECTION)
+                .whereArrayContainsAny("preferences.cousine", cuisineType)
+                .get().await()
+                .toObjects(Menu::class.java)
+            Timber.tag("getMealByPreferences").d("cuisineTypeResponse size: ${cuisineTypeResponse.size}")
+
+            val mealTypeResponse = fireStoreDb.collection(MENU_COLLECTION)
+                .whereArrayContainsAny("preferences.mealType", mealType)
+                .get().await()
+                .toObjects(Menu::class.java)
+            Timber.tag("getMealByPreferences").d("mealTypeResponse size: ${mealTypeResponse.size}")
+
+            val dishTypeResponse = fireStoreDb.collection(MENU_COLLECTION)
+                .whereArrayContainsAny("preferences.dishType", dishType)
+                .get().await()
+                .toObjects(Menu::class.java)
+            Timber.tag("getMealByPreferences").d("dishTypeResponse size: ${dishTypeResponse.size}")
+
+            val response = healthResponse.intersect(dietResponse.toSet())
+                .intersect(cuisineTypeResponse.toSet())
+                .intersect(mealTypeResponse.toSet())
+                .intersect(dishTypeResponse.toSet())
+                .toList()
+
+            if(response.isEmpty()){
+                emit(Resource.Success(emptyList()))
+            }else {
+                emit(Resource.Success(response))
+            }
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "An error occurred"))
         }
-
     }
-
     override suspend fun getAllMenus(): Flow<Resource<List<Menu>>> = flow {
         emit(Resource.Loading())
         try {

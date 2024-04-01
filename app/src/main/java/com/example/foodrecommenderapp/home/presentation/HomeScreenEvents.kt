@@ -40,6 +40,8 @@ sealed class HomeScreenEvents {
 
     data class OnDeselectDishTypePreference(val dishTypeItem: String) : HomeScreenEvents()
 
+    data class OnClickCategory(val categoryName: String) : HomeScreenEvents()
+
     object OnDismissHealthDropDown : HomeScreenEvents()
 
     object OnDismissDietDropDown : HomeScreenEvents()

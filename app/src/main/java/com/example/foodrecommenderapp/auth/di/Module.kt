@@ -4,15 +4,12 @@ import com.example.foodrecommenderapp.auth.login.data.DefaultLoginRepositoryImpl
 import com.example.foodrecommenderapp.auth.login.domain.LoginRepository
 import com.example.foodrecommenderapp.auth.register.data.DefaultRegisterRepositoryImplementation
 import com.example.foodrecommenderapp.auth.register.domain.RegisterRepository
-import com.example.foodrecommenderapp.common.constants.BASE_URL
-import com.example.foodrecommenderapp.common.constants.PREFERENCES_BASE_URL
 import com.example.foodrecommenderapp.common.data.DefaultFormValidatorRepositoryImplementation
 import com.example.foodrecommenderapp.common.domain.FormValidatorRepository
 import com.example.foodrecommenderapp.home.data.DefaultHomeRepositoryImplementation
-import com.example.foodrecommenderapp.preference.data.DefaultPreferencesRepositoryImplementation
-import com.example.foodrecommenderapp.home.data.network.ApiService
-import com.example.foodrecommenderapp.preference.data.network.PreferenceGeneratorService
 import com.example.foodrecommenderapp.home.domain.HomeRepository
+import com.example.foodrecommenderapp.preference.data.DefaultPreferencesRepositoryImplementation
+import com.example.foodrecommenderapp.preference.data.network.PreferenceGeneratorService
 import com.example.foodrecommenderapp.preference.domain.PreferenceRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -23,9 +20,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -69,49 +64,15 @@ object Module {
         return GsonConverterFactory.create()
     }
 
-    @Provides
-    @Singleton
-    @Named("DefaultRetrofit")
-    fun provideRetrofit(gsonConverterFactory: GsonConverterFactory): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(gsonConverterFactory)
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    @Named("PreferenceGeneratorRetrofit")
-    fun providePreferenceGeneratorRetrofit(gsonConverterFactory: GsonConverterFactory): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(PREFERENCES_BASE_URL)
-            .addConverterFactory(gsonConverterFactory)
-            .build()
-    }
-
-    @Provides
-    @Singleton
-
-    fun provideApiService(@Named("DefaultRetrofit") retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun providePreferenceGeneratorService(
-        @Named("PreferenceGeneratorRetrofit")  retrofit: Retrofit
-    ): PreferenceGeneratorService {
-        return retrofit.create(PreferenceGeneratorService::class.java)
-    }
 
     @Provides
     @Singleton
     fun provideHomeRepository(
-        apiService: ApiService
-    ): HomeRepository = DefaultHomeRepositoryImplementation(apiService)
+        firebaseFirestore: FirebaseFirestore
+    ): HomeRepository = DefaultHomeRepositoryImplementation(firebaseFirestore)
 
     @Provides
     @Singleton
-    fun providePreferenceRepository(preferenceGeneratorService: PreferenceGeneratorService, firestore: FirebaseFirestore): PreferenceRepository =
-        DefaultPreferencesRepositoryImplementation(preferenceGeneratorService, firestore)
+    fun providePreferenceRepository( firestore: FirebaseFirestore): PreferenceRepository =
+        DefaultPreferencesRepositoryImplementation(firestore)
 }

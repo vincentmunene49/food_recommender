@@ -1,11 +1,8 @@
 package com.example.foodrecommenderapp.preference.domain
 
 import com.example.foodrecommenderapp.admin.menu.model.Menu
-import com.example.foodrecommenderapp.common.Resource
-import com.example.foodrecommenderapp.preference.data.pojo.GenerateMeal
-import com.example.foodrecommenderapp.preference.data.pojo.Hit
 import com.example.foodrecommenderapp.admin.report.model.Reports
-import com.example.foodrecommenderapp.home.data.model.Meal
+import com.example.foodrecommenderapp.common.Resource
 import kotlinx.coroutines.flow.Flow
 
 interface PreferenceRepository {
@@ -16,7 +13,7 @@ interface PreferenceRepository {
         cuisineType: List<String>,
         mealType: List<String>,
         dishType: List<String>
-    ): Flow<Resource<GenerateMeal>>
+    ): Flow<Resource<List<Menu>>>
 
     suspend fun saveReports(
         reports: Reports
