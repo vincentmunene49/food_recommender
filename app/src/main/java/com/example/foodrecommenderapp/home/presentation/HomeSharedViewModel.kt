@@ -51,7 +51,11 @@ class HomeSharedViewModel @Inject constructor(
                 state = state.copy(
                     searchTerm = event.searchTerm
                 )
-                getMealByFirstLetter(event.searchTerm)
+                if(event.searchTerm.isNotEmpty() || event.searchTerm.isNotBlank()){
+                    getMealByFirstLetter(state.searchTerm)
+                }else{
+                    getMeals()
+                }
             }
 
             HomeScreenEvents.OnDismissShowPreferencesDialog -> {
@@ -246,19 +250,61 @@ class HomeSharedViewModel @Inject constructor(
                 )
 
             }
+
+            is HomeScreenEvents.OnClickCategory ->{
+                state = state.copy(
+                    selectedCategory = event.categoryName
+                )
+                getMealByCategories(state.selectedCategory)
+            }
         }
     }
 
 
     private fun getMealByFirstLetter(searchTerm: String) {
         viewModelScope.launch {
-            repository.searchMeal(searchTerm).onEach {
+            repository.searchMeal(searchTerm.lowercase()).onEach {
                 when (it) {
                     is Resource.Success -> {
                         state = state.copy(
                             isLoading = false,
                             meals = it.data
                         )
+
+                        Timber.tag("HomeViewModel").d("getMealByFirstLetter: ${it.data}")
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+
+                        Timber.tag("HomeViewModel").d("getMealByFirstLetterError: ${it.message}")
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun getMealByCategories(category:String){
+        viewModelScope.launch {
+            repository.getMealsByCategory(category.lowercase()).onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false,
+                            meals = it.data
+                        )
+
+                        Timber.tag("HomeViewModel").d("getMealByCategories: ${it.data}")
                     }
 
                     is Resource.Error -> {
@@ -289,6 +335,10 @@ class HomeSharedViewModel @Inject constructor(
                             isLoading = false,
                             categories = it.data
                         )
+
+                        Timber.tag("HomeViewModel").d("getMealCategories: ${it.data}")
+
+
                     }
 
                     is Resource.Error -> {
@@ -318,6 +368,8 @@ class HomeSharedViewModel @Inject constructor(
                             isLoading = false,
                             meals = it.data
                         )
+
+                        Timber.tag("HomeViewModel").d("getMeals: ${it.data}")
                     }
 
                     is Resource.Error -> {
@@ -326,6 +378,7 @@ class HomeSharedViewModel @Inject constructor(
                             error = it.message ?: "An unexpected error occurred",
                             showErrorDialog = true
                         )
+                        Timber.tag("HomeViewModel").d("getMealsError: ${it.message}")
                     }
 
                     is Resource.Loading -> {

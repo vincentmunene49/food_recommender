@@ -4,6 +4,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.toLowerCase
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodrecommenderapp.admin.common.domain.AdminRepository
@@ -31,6 +34,8 @@ class AdminSharedViewModel @Inject constructor(
         private set
 
 
+
+
     private var _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
@@ -52,11 +57,14 @@ class AdminSharedViewModel @Inject constructor(
             }
 
             is AdminEvents.OnCategoryImageSelected -> {
-                state = state.copy(categoryImage = event.imageUri)
+                state = state.copy(categoryImage = event.imageByteArray, categoryImageUri = event.imageUri)
+                Timber.tag("MenuViewModel").d("Category uri: ${event.imageUri}")
+
+
             }
 
             is AdminEvents.OnFoodImageSelected -> {
-                state = state.copy(foodImage = event.imageUri)
+                state = state.copy(foodImageUri = event.imageUri, foodImage = event.imageByteArray)
                 Timber.tag("MenuViewModel").d("Image uri: ${event.imageUri}")
             }
 
@@ -275,10 +283,8 @@ class AdminSharedViewModel @Inject constructor(
 
     private fun createMenu() {
         val menu = Menu(
-            name = state.mealName ?: "",
-            categoryName = state.categoryName ?: "",
-            categoryImage = state.categoryImage,
-            foodImage = state.foodImage,
+            name = state.mealName?.lowercase() ?: "",
+            category = state.categoryName?.lowercase() ?: "",
             ingredients = state.ingredients.filter {
                 it.isNotEmpty()
             },
@@ -292,56 +298,53 @@ class AdminSharedViewModel @Inject constructor(
         )
 
         val category = Category(
-            name = state.categoryName ?: "",
-            image = state.categoryImage
+            name = state.categoryName?.lowercase() ?: "",
+            image = state.categoryImage.toString()
         )
 
         viewModelScope.launch {
-            state.foodImage?.let { foodImage ->
-                state.categoryImage?.let { categoryImage ->
-                    adminRepository.addMenu(
-                        menu = menu,
-                        foodImage = foodImage,
-                        category = category,
-                        categoryImage = categoryImage
-                    )
-                        .onEach { resource ->
-                            when (resource) {
-                                is Resource.Loading -> {
-                                    state = state.copy(isLoading = true)
-                                }
+            adminRepository.addMenu(
+                menu = menu,
+                foodImage = state.foodImage ?: byteArrayOf(),
+                category = category,
+                categoryImage = state.categoryImage ?: byteArrayOf(),
+            )
+                .onEach { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            state = state.copy(isLoading = true)
+                        }
 
-                                is Resource.Success -> {
-                                    state = state.copy(
-                                        isLoading = false,
-                                        showSuccessDialog = true,
-                                        mealName = "",
-                                        categoryName = "",
-                                        foodImage = null,
-                                        ingredients = mutableStateListOf(),
-                                        selectedHealthListPreferences = emptyList(),
-                                        selectedDietListPreferences = emptyList(),
-                                        selectedCousineListPreferences = emptyList(),
-                                        selectedMealTypePreferences = emptyList(),
-                                        selectedDishTypePreferences = emptyList()
-                                    )
+                        is Resource.Success -> {
+                            state = state.copy(
+                                isLoading = false,
+                                showSuccessDialog = true,
+                                mealName = "",
+                                categoryName = "",
+                                foodImage = null,
+                                ingredients = mutableStateListOf(),
+                                selectedHealthListPreferences = emptyList(),
+                                selectedDietListPreferences = emptyList(),
+                                selectedCousineListPreferences = emptyList(),
+                                selectedMealTypePreferences = emptyList(),
+                                selectedDishTypePreferences = emptyList()
+                            )
 
-                                }
+                        }
 
-                                is Resource.Error -> {
-                                    state = state.copy(
-                                        isLoading = false,
-                                        errorMessage = resource.message ?: "",
-                                        showErrorDialog = true
-                                    )
-                                    Timber.tag("MenuViewModel")
-                                        .e("Error creating menu: ${resource.message}")
-                                }
-                            }
+                        is Resource.Error -> {
+                            state = state.copy(
+                                isLoading = false,
+                                errorMessage = resource.message ?: "",
+                                showErrorDialog = true
+                            )
+                            Timber.tag("MenuViewModel")
+                                .d("Error creating menu: ${resource.message}")
+                        }
+                    }
 
-                        }.launchIn(this)
-                }
-            }
+                }.launchIn(this)
+
         }
 
 

@@ -15,6 +15,7 @@ data class HomeState(
     val showPreferencesDialog: Boolean = false,
     val showPreferenceLoadingDialog: Boolean = false,
     val searchTerm: String = "",
+    val selectedCategory: String = "",
     val selectedHealthListPreferences: List<String> = emptyList(),
     val selectedDietListPreferences: List<String> = emptyList(),
     val selectedCousineListPreferences: List<String> = emptyList(),

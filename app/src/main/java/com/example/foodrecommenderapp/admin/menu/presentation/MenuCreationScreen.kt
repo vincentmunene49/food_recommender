@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -82,6 +83,7 @@ fun MenuCreationScreenContent(
 ) {
 
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     val dropDownBoxList = listOf(
         HEALTHLISTLABELS.map { it.lowercase() },
@@ -99,8 +101,22 @@ fun MenuCreationScreenContent(
 
     val imagePicker =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
-            onEvent(AdminEvents.OnFoodImageSelected(uri!!))
+            val byteArray:ByteArray? = uri?.let {
+                context.contentResolver.openInputStream(it)?.use {inputStream->
+                    inputStream.readBytes()
+                }
+            }
+            onEvent(AdminEvents.OnFoodImageSelected(uri,byteArray))
         }
+
+    val categoryImagePicker = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
+        val byteArray:ByteArray? = uri?.let {
+            context.contentResolver.openInputStream(it)?.use {inputStream->
+                inputStream.readBytes()
+            }
+        }
+        onEvent(AdminEvents.OnCategoryImageSelected(byteArray,uri))
+    }
 
     Box(
         modifier = modifier
@@ -148,7 +164,7 @@ fun MenuCreationScreenContent(
                             .size(120.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (mutableStateOf(state.foodImage).value == null) {
+                        if (mutableStateOf(state.foodImageUri).value == null) {
                             Image(
                                 painter = painterResource(id = R.drawable.add_photo),
                                 contentDescription = null,
@@ -221,12 +237,13 @@ fun MenuCreationScreenContent(
                                 shape = CircleShape
                             )
                             .clickable {
-                                imagePicker.launch("image/*")
+                                categoryImagePicker.launch("image/*")
+                                //call viewmodle to upload image
                             }
                             .size(50.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (mutableStateOf(state.categoryImage).value == null) {
+                        if (mutableStateOf(state.categoryImageUri).value == null) {
                             Image(
                                 painter = painterResource(id = R.drawable.add_photo),
                                 contentDescription = null,

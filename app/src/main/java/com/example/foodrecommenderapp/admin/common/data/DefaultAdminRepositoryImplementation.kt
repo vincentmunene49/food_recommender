@@ -1,6 +1,7 @@
 package com.example.foodrecommenderapp.admin.common.data
 
 import android.net.Uri
+import androidx.core.net.toUri
 import com.example.foodrecommenderapp.admin.common.domain.AdminRepository
 import com.example.foodrecommenderapp.admin.menu.model.Category
 import com.example.foodrecommenderapp.admin.menu.model.Menu
@@ -25,33 +26,40 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
     private val storage: FirebaseStorage
 
 ) : AdminRepository {
-    override suspend fun addMenu(menu: Menu, foodImage: Uri, category: Category, categoryImage: Uri) = flow {
+    override suspend fun addMenu(menu: Menu, foodImage: ByteArray, category: Category, categoryImage: ByteArray): Flow<Resource<Menu>> = flow {
         emit(Resource.Loading<Menu>())
         coroutineScope {
-            val menuUpload = async {
-                firebaseFirestore.collection(MENU_COLLECTION).document(UUID.randomUUID().toString())
-                    .set(menu).await()
-            }
-            val imageUpload = async {
-                val imageRef = storage.reference.child("images/foodImages/${UUID.randomUUID()}")
-                imageRef.putFile(foodImage).await()
-                imageRef.downloadUrl.await()
-            }
-            val categoryUpload = async {
-                firebaseFirestore.collection(CATEGORY_COLLECTION).document(UUID.randomUUID().toString())
-                    .set(category).await()
-            }
-            val categoryImageUpload = async {
-                val imageRef = storage.reference.child("images/categoryImages/${UUID.randomUUID()}")
-                imageRef.putFile(categoryImage).await()
-                imageRef.downloadUrl.await()
-            }
             try {
+                val imageFood = async {
+                    val imageRef = storage.reference.child("images/foodImages/${UUID.randomUUID()}")
+                    imageRef.putBytes(foodImage).await()
+                    imageRef.downloadUrl.await().toString()
+                }
+                val imageCategory = async {
+                    val imageRef = storage.reference.child("images/categoryImages/${UUID.randomUUID()}")
+                    imageRef.putBytes(categoryImage).await()
+                    imageRef.downloadUrl.await().toString()
+                }
+
+                val imageFoodUrl = imageFood.await()
+                val imageCategoryUrl = imageCategory.await()
+
+                val menuWithImages = menu.copy(image = imageFoodUrl, categoryImage = imageCategoryUrl)
+                val categoryWithImage = category.copy(image = imageCategoryUrl)
+
+                val menuUpload = async {
+                    firebaseFirestore.collection(MENU_COLLECTION).document(UUID.randomUUID().toString())
+                        .set(menuWithImages).await()
+                }
+                val categoryUpload = async {
+                    firebaseFirestore.collection(CATEGORY_COLLECTION).document(UUID.randomUUID().toString())
+                        .set(categoryWithImage).await()
+                }
+
                 menuUpload.await()
-                imageUpload.await()
                 categoryUpload.await()
-                categoryImageUpload.await()
-                emit(Resource.Success(menu.copy(foodImage = foodImage, categoryImage = categoryImage)))
+
+                emit(Resource.Success(menuWithImages))
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
@@ -60,7 +68,6 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
             }
         }
     }
-
 
     override suspend fun getReports(date:String): Flow<Resource<Reports?>> = flow {
         emit(Resource.Loading())

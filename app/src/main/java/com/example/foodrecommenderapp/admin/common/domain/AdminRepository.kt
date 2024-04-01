@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface AdminRepository {
 
-    suspend fun addMenu(menu: Menu, foodImage:Uri, category: Category, categoryImage:Uri):Flow<Resource<Menu>>
+    suspend fun addMenu(menu: Menu, foodImage:ByteArray, category: Category, categoryImage:ByteArray):Flow<Resource<Menu>>
 
     suspend fun getReports(date:String): Flow<Resource<Reports?>>
 

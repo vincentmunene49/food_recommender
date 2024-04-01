@@ -22,9 +22,12 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
         return flow {
             emit(Resource.Loading())
             try {
-                val result =
-                    firebaseFirestore.collection(MENU_COLLECTION).whereEqualTo("name", searchTerm)
-                        .get().await()
+                val startAt = if (searchTerm.isNotEmpty()) searchTerm[0].toString() else ""
+                val result = firebaseFirestore.collection(MENU_COLLECTION)
+                    .orderBy("name")
+                    .startAt(startAt)
+                    .get()
+                    .await()
                 val meals = result.toObjects(Menu::class.java)
                 if (meals.isNotEmpty()) {
                     emit(Resource.Success(meals))

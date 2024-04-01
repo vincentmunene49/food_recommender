@@ -1,6 +1,5 @@
 package com.example.foodrecommenderapp.preference.presentation
 
-import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
@@ -23,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -107,7 +105,7 @@ fun PreferencesScreenContent(
                 items(state.meals) { menu ->
                     MealCard(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        imagePath = menu.foodImage.toString(),
+                        imagePath = menu.image.toString(),
                         mealName = menu.name,
                         healthList = menu.preferences["health"],
                         dietList = menu.preferences["diet"]

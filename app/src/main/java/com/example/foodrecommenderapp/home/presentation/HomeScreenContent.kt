@@ -1,5 +1,6 @@
 package com.example.foodrecommenderapp.home.presentation
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,7 +63,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.foodrecommenderapp.R
@@ -253,7 +253,8 @@ fun HomeScreenContent(
                         MealComponent(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             foodCategory = category.name,
-                            foodImage = image
+                            foodImage = image,
+                            onCLick = { onEvent(HomeScreenEvents.OnClickCategory(category.name)) }
                         )
                     }
                 }
@@ -278,13 +279,15 @@ fun HomeScreenContent(
 
                 state.meals?.let { mealList ->
                     items(mealList) { meal ->
-                        AllMealsComponent(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            onClickFood = { /*TODO*/ },
-                            imagePath = meal.foodImage,
-                            foodTitle = meal.name,
-                            foodCategory = meal.categoryName
-                        )
+                        meal.image?.let { image->
+                            AllMealsComponent(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                onClickFood = { /*TODO*/ },
+                                imagePath = image,
+                                foodTitle = meal.name,
+                                foodCategory = meal.category
+                            )
+                        }
                     }
                 }
 
@@ -376,16 +379,24 @@ fun AllMealsComponent(
         Column {
             Box(
                 modifier = Modifier
-                    .size(150.dp) // Adjust the size as needed
+                    .size(150.dp)
                     .clip(RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = imagePath,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop, // Use Crop to ensure the image fills the circular shape
-                    placeholder = painterResource(id = R.drawable.meal)
-                )
+                if(imagePath.isNotBlank() && imagePath.isNotEmpty()) {
+                    AsyncImage(
+                        model = imagePath,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop, // Use Crop to ensure the image fills the circular shape
+                        placeholder = painterResource(id = R.drawable.food)
+                    )
+                }else{
+                    Icon(
+                        imageVector = Icons.Default.Fastfood,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -413,30 +424,33 @@ fun MealComponent(
     modifier: Modifier = Modifier,
     foodCategory: String,
     foodImage: String,
+    onCLick: (String) -> Unit = {}
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .size(80.dp)
-                .background(color = Color(0XFFF7F7F7)),
+                .background(color = Color(0XFFF7F7F7))
+                .clickable { onCLick(foodCategory) }
+                .clip(RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
         ) {
-            if(foodImage.isNotEmpty() && foodImage.isNotBlank() && foodImage!=""){
+            if(foodImage.isNotEmpty() && foodImage.isNotBlank()) {
                 AsyncImage(
                     modifier = Modifier.size(60.dp),
                     model = foodImage,
                     contentDescription = null,
-                    placeholder = painterResource(id = R.drawable.meal),
+                    placeholder = painterResource(id = R.drawable.food),
                     contentScale = ContentScale.Crop
                 )
             }else{
                 Icon(
-                    modifier = Modifier.size(60.dp),
                     imageVector = Icons.Default.Fastfood,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
+
 
 
         }
