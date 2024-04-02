@@ -22,4 +22,6 @@ interface HomeRepository {
 
     suspend fun deleteOrder(order: Order): Flow<Resource<Order>>
 
+    suspend fun logout(): Flow<Resource<Unit>>
+
 }

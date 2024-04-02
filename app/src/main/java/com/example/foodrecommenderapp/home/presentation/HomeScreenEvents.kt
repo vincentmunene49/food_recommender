@@ -10,6 +10,8 @@ sealed class HomeScreenEvents {
 
     object OnClickPreferencesCard : HomeScreenEvents()
 
+    object OnClickLogout : HomeScreenEvents()
+
 
     object OnDismissAddToOrderDialog : HomeScreenEvents()
     data class OnSearchTermChanged(val searchTerm: String) : HomeScreenEvents()

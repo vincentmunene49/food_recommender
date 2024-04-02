@@ -1,10 +1,14 @@
 package com.example.foodrecommenderapp.order.presentation
 
+import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,15 +63,17 @@ fun OrderScreenContent(
 ) {
 
     Column(
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+
     ) {
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(state.orders ?: emptyList()) { order ->
                 OrderComponent(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     quantity = order.quantity.toString(),
                     meal = order.menu,
                     onClickDelete = {
@@ -92,7 +98,7 @@ fun OrderScreenContent(
 
 
 @Composable
-fun OrderComponent(
+private fun OrderComponent(
     modifier: Modifier = Modifier,
     quantity: String,
     meal: Menu,
@@ -103,11 +109,12 @@ fun OrderComponent(
             .border(
                 width = 1.dp,
                 shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AllMealsComponent(
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
             onClickFood = { /*TODO*/ },
             imagePath = meal.image ?: "",
             foodTitle = meal.name,
@@ -144,15 +151,31 @@ fun OrderComponent(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_NO)
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
 @Composable
 fun OrderScreenContentPreview() {
     FoodRecommenderAppTheme {
-        OrderScreenContent(
-            state = HomeState(),
-            onEvents = { },
-            uiEvent = emptyFlow()
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+            ,
+
+        ) {
+            OrderComponent(
+                quantity = "2",
+                meal = Menu(
+                    id = "1",
+                    name = "Chicken",
+                    category = "Main",
+                    price = 200.0,
+                    image = "https://www.themealdb.com/images/media/meals/1548772327.jpg"
+                ),
+                onClickDelete = {}
+            )
+        }
+
     }
 
 }

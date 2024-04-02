@@ -126,7 +126,8 @@ fun PreferencesScreenContent(
                         dietList = menu.preferences["diet"],
                         onClick = {
                             onEvent(HomeScreenEvents.OnClickPreferencesCard)
-                        }
+                        },
+                        price = menu.price.toString()
                     )
                 }
             }

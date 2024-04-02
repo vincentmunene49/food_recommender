@@ -15,6 +15,7 @@ import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.common.domain.FormValidatorRepository
+import com.example.foodrecommenderapp.order.data.model.Order
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
@@ -35,13 +36,12 @@ class AdminSharedViewModel @Inject constructor(
         private set
 
 
-
-
     private var _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
     init {
         getReports()
+        getOrderReport()
     }
 
     fun onEvent(event: AdminEvents) {
@@ -63,7 +63,10 @@ class AdminSharedViewModel @Inject constructor(
             }
 
             is AdminEvents.OnCategoryImageSelected -> {
-                state = state.copy(categoryImage = event.imageByteArray, categoryImageUri = event.imageUri)
+                state = state.copy(
+                    categoryImage = event.imageByteArray,
+                    categoryImageUri = event.imageUri
+                )
                 Timber.tag("MenuViewModel").d("Category uri: ${event.imageUri}")
 
 
@@ -284,6 +287,15 @@ class AdminSharedViewModel @Inject constructor(
                 )
                 getReports()
             }
+
+            is AdminEvents.OnDeleteOrder -> {
+                deleteOrder(event.order)
+            }
+
+            AdminEvents.OClickLogOut -> {
+                logOut()
+            }
+
         }
     }
 
@@ -315,7 +327,7 @@ class AdminSharedViewModel @Inject constructor(
                 menu = menu,
                 foodImage = state.foodImage ?: byteArrayOf(),
                 category = category,
-                categoryImage = state.categoryImage ?: byteArrayOf(),
+                categoryImage = state.categoryImage ?: byteArrayOf()
             )
                 .onEach { resource ->
                     when (resource) {
@@ -410,12 +422,8 @@ class AdminSharedViewModel @Inject constructor(
                             isLoading = false,
                             showEmptyScreen = false
                         )
-                        if (state.orders.isNullOrEmpty()) { // Check if reports is empty
-                            state = state.copy(
-                                showEmptyScreen = true
-                            )
-                        }
-
+                        Timber.tag("MenuViewModel")
+                            .e("Get Reports ${resource.data}")
                     }
 
                     is Resource.Error -> {
@@ -424,6 +432,69 @@ class AdminSharedViewModel @Inject constructor(
                             errorMessage = resource.message ?: "",
                             showErrorDialog = true,
                             showEmptyScreen = false
+                        )
+                        Timber.tag("MenuViewModel")
+                            .e("Get Reports ${resource.message}")
+                    }
+                }
+
+            }.launchIn(this)
+        }
+    }
+
+    private fun deleteOrder(order: Order) {
+        viewModelScope.launch {
+            adminRepository.deleteOrder(order).onEach { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        state = state.copy(isLoading = true)
+                    }
+
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false
+                        ).also {
+                            getOrderReport()
+                        }
+                        Timber.tag("MenuViewModel")
+                            .e("Deleted")
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            errorMessage = resource.message ?: "",
+                            showErrorDialog = true
+                        )
+                        Timber.tag("MenuViewModel")
+                            .e("Get Reports ${resource.message}")
+                    }
+                }
+
+            }.launchIn(this)
+        }
+    }
+
+    private fun logOut() {
+        viewModelScope.launch {
+            adminRepository.logOut().onEach { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        state = state.copy(isLoading = true)
+                    }
+
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false
+                        )
+                        _uiEvent.send(UiEvent.NavigateToLoginScreen)
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            errorMessage = resource.message ?: "",
+                            showErrorDialog = true
                         )
                         Timber.tag("MenuViewModel")
                             .e("Get Reports ${resource.message}")

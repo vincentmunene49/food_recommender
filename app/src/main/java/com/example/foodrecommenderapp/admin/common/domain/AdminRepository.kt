@@ -16,4 +16,8 @@ interface AdminRepository {
 
     suspend fun getOrderReport(): Flow<Resource<List<Order>>>
 
+    suspend fun deleteOrder(order: Order): Flow<Resource<Order>>
+
+    suspend fun logOut(): Flow<Resource<Boolean>>
+
 }

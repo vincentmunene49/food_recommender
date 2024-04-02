@@ -10,11 +10,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.DeliveryDining
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.Create
+import androidx.compose.material.icons.outlined.DeliveryDining
+import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -32,16 +36,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.foodrecommenderapp.admin.menu.presentation.MenuCreationScreen
+import com.example.foodrecommenderapp.admin.report.presentation.OrderReportsScreen
 import com.example.foodrecommenderapp.admin.report.presentation.ReportsScreen
+import com.example.foodrecommenderapp.common.UiEvent
+import com.example.foodrecommenderapp.navigation.Route
 import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AdminScreen(
-    viewModel: AdminSharedViewModel
-
+    viewModel: AdminSharedViewModel,
+    navController: NavController
 ) {
     val tabList = listOf(
         TabItem(
@@ -54,6 +62,12 @@ fun AdminScreen(
             selectedIcon = Icons.Filled.Create,
             unselectedIcon = Icons.Outlined.Create
         ),
+
+        TabItem(
+            title = "Orders",
+            selectedIcon = Icons.Filled.DeliveryDining,
+            unselectedIcon = Icons.Outlined.DeliveryDining
+        )
     )
     var selectedIndex by remember {
         mutableIntStateOf(0)
@@ -66,6 +80,20 @@ fun AdminScreen(
 
     LaunchedEffect(pagerState.currentPage) {
         selectedIndex = pagerState.currentPage
+    }
+
+    LaunchedEffect(key1 = true) {
+        viewModel.uiEvent.collect {
+            when (it) {
+                is UiEvent.NavigateToLoginScreen -> {
+                    navController.navigateUp()
+                    navController.popBackStack(Route.AdminStart.route, inclusive = true)
+
+                }
+
+                else -> {}
+            }
+        }
     }
 
     Scaffold(
@@ -81,7 +109,16 @@ fun AdminScreen(
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary
-                )
+                ),
+                actions = {
+                    IconButton(onClick = { viewModel.onEvent(AdminEvents.OClickLogOut) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Logout,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
             )
         },
     ) { paddingValues ->
@@ -92,7 +129,7 @@ fun AdminScreen(
                 .padding(paddingValues),
         ) {
             TabRow(
-               modifier =  Modifier.padding(vertical = 8.dp),
+                modifier = Modifier.padding(vertical = 8.dp),
                 selectedTabIndex = selectedIndex
             ) {
                 tabList.forEachIndexed { index, tabItem ->
@@ -137,6 +174,10 @@ fun AdminScreen(
 
                     1 -> {
                         MenuCreationScreen(viewModel)
+                    }
+
+                    2 -> {
+                        OrderReportsScreen(viewModel)
                     }
                 }
 
