@@ -10,6 +10,9 @@ import com.example.foodrecommenderapp.common.constants.MENU_COLLECTION
 import com.example.foodrecommenderapp.common.constants.REPORT_COLLECTION
 import com.example.foodrecommenderapp.admin.report.model.Reports
 import com.example.foodrecommenderapp.common.constants.CATEGORY_COLLECTION
+import com.example.foodrecommenderapp.common.constants.ORDER_COLLECTION
+import com.example.foodrecommenderapp.order.data.model.Order
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.async
@@ -23,7 +26,8 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class DefaultAdminRepositoryImplementation @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
-    private val storage: FirebaseStorage
+    private val storage: FirebaseStorage,
+    private val firebaseAuth: FirebaseAuth
 
 ) : AdminRepository {
     override suspend fun addMenu(menu: Menu, foodImage: ByteArray, category: Category, categoryImage: ByteArray): Flow<Resource<Menu>> = flow {
@@ -48,18 +52,24 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
                 val categoryWithImage = category.copy(image = imageCategoryUrl)
 
                 val menuUpload = async {
-                    firebaseFirestore.collection(MENU_COLLECTION).document(UUID.randomUUID().toString())
-                        .set(menuWithImages).await()
+                    val result = firebaseFirestore.collection(MENU_COLLECTION).add(menuWithImages).await()
+                    val menuId = result.id
+                    val menuWithId = menuWithImages.copy(id = menuId)
+                    result.set(menuWithId).await()
+                    menuWithId
                 }
                 val categoryUpload = async {
-                    firebaseFirestore.collection(CATEGORY_COLLECTION).document(UUID.randomUUID().toString())
-                        .set(categoryWithImage).await()
+                    val result = firebaseFirestore.collection(CATEGORY_COLLECTION).add(categoryWithImage).await()
+                    val categoryId = result.id
+                    val categoryWithId = categoryWithImage.copy(id = categoryId)
+                    result.set(categoryWithId).await()
+                    categoryWithId
                 }
 
-                menuUpload.await()
+                val menuWithId = menuUpload.await()
                 categoryUpload.await()
 
-                emit(Resource.Success(menuWithImages))
+                emit(Resource.Success(menuWithId))
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
@@ -68,7 +78,6 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
             }
         }
     }
-
     override suspend fun getReports(date:String): Flow<Resource<Reports?>> = flow {
         emit(Resource.Loading())
 
@@ -85,6 +94,27 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
                 throw e
             }
             emit(Resource.Error("☹\uFE0F \n ${e.message}"))
+        }
+    }
+
+    override suspend fun getOrderReport(): Flow<Resource<List<Order>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                val adminId =  firebaseAuth.currentUser?.uid ?: ""
+                val result = firebaseFirestore.collection(ORDER_COLLECTION)
+                    .whereEqualTo("adminId", adminId)
+                    .get()
+                    .await()
+                val orders = result.toObjects(Order::class.java)
+                if (orders.isNotEmpty()) {
+                    emit(Resource.Success(orders))
+                } else {
+                    emit(Resource.Success(emptyList()))
+                }
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
         }
     }
 }

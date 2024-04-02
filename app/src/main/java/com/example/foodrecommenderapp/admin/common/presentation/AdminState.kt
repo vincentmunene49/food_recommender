@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import com.example.foodrecommenderapp.admin.menu.model.Menu
 import com.example.foodrecommenderapp.admin.report.model.Reports
+import com.example.foodrecommenderapp.order.data.model.Order
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -11,11 +12,14 @@ import java.util.Locale
 data class AdminState(
     val menuList: List<Menu> = emptyList(),
     val isLoading: Boolean = false,
+    val orders: List<Order> = emptyList(),
     val errorMessage: String = "",
     val mealNameErrorMessage:String? =null,
+    val mealPriceErrorMessage:String? =null,
     val categoryErrorMessage:String? = null,
     val showErrorDialog: Boolean = false,
     val mealName:String? = null,
+    val mealPrice:Double? = null,
     val categoryName: String? = null,
     val foodImageUri:Uri? = null,
     val categoryImageUri: Uri? = null,

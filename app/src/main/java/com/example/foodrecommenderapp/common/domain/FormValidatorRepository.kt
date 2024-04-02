@@ -9,4 +9,6 @@ interface FormValidatorRepository {
     fun validateConfirmPassword(password: String, confirmPassword: String): ValidationResult
 
     fun validateMealField(field: String): ValidationResult
+
+    fun validateMealPrice(price: String): ValidationResult
 }

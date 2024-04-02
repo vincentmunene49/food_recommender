@@ -68,8 +68,9 @@ object Module {
     @Provides
     @Singleton
     fun provideHomeRepository(
-        firebaseFirestore: FirebaseFirestore
-    ): HomeRepository = DefaultHomeRepositoryImplementation(firebaseFirestore)
+        firebaseFirestore: FirebaseFirestore,
+        firebaseAuth: FirebaseAuth
+    ): HomeRepository = DefaultHomeRepositoryImplementation(firebaseFirestore,firebaseAuth)
 
     @Provides
     @Singleton
