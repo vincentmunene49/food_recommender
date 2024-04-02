@@ -383,7 +383,7 @@ fun AllMealsComponent(
         modifier = modifier
             .clickable { onClickFood() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
         )
     ) {
 

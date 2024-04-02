@@ -75,7 +75,8 @@ fun NavGraph() {
                 val viewModel =
                     it.sharedViewModel<AdminSharedViewModel>(navController = navController)
                 AdminScreen(
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    navController = navController
                 )
             }
         }

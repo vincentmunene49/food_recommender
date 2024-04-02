@@ -171,4 +171,16 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
             }
         }
     }
+
+    override suspend fun logout(): Flow<Resource<Unit>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                firebaseAuth.signOut()
+                emit(Resource.Success(Unit))
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
+        }
+    }
 }

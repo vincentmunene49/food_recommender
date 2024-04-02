@@ -1,6 +1,7 @@
 package com.example.foodrecommenderapp.admin.common.presentation
 
 import android.net.Uri
+import com.example.foodrecommenderapp.order.data.model.Order
 
 
 sealed class AdminEvents {
@@ -11,6 +12,8 @@ sealed class AdminEvents {
     object OnDismissSuccessDialog : AdminEvents()
 
     object OnDismissErrorDialog : AdminEvents()
+
+    data class OnDeleteOrder(val order: Order) : AdminEvents()
 
     data class OnAddMealName(val name: String) : AdminEvents()
 
@@ -39,6 +42,8 @@ sealed class AdminEvents {
     data class OnDeselectHealthPreference(val healthItem: String) : AdminEvents()
 
     data class OnSelectDietPreference(val dietItem: String) : AdminEvents()
+
+    object OClickLogOut : AdminEvents()
 
     data class OnDeselectDietPreference(val dietItem: String) : AdminEvents()
 

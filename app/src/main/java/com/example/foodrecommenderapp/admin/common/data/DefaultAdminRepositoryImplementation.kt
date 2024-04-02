@@ -20,6 +20,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -30,7 +31,11 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
     private val firebaseAuth: FirebaseAuth
 
 ) : AdminRepository {
-    override suspend fun addMenu(menu: Menu, foodImage: ByteArray, category: Category, categoryImage: ByteArray): Flow<Resource<Menu>> = flow {
+    override suspend fun addMenu(
+        menu: Menu, foodImage: ByteArray,
+        category: Category,
+        categoryImage: ByteArray
+    ): Flow<Resource<Menu>> = flow {
         emit(Resource.Loading<Menu>())
         coroutineScope {
             try {
@@ -40,7 +45,8 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
                     imageRef.downloadUrl.await().toString()
                 }
                 val imageCategory = async {
-                    val imageRef = storage.reference.child("images/categoryImages/${UUID.randomUUID()}")
+                    val imageRef =
+                        storage.reference.child("images/categoryImages/${UUID.randomUUID()}")
                     imageRef.putBytes(categoryImage).await()
                     imageRef.downloadUrl.await().toString()
                 }
@@ -48,18 +54,22 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
                 val imageFoodUrl = imageFood.await()
                 val imageCategoryUrl = imageCategory.await()
 
-                val menuWithImages = menu.copy(image = imageFoodUrl, categoryImage = imageCategoryUrl)
+                val menuWithImages =
+                    menu.copy(image = imageFoodUrl, categoryImage = imageCategoryUrl, adminId = firebaseAuth.currentUser?.uid ?: "")
                 val categoryWithImage = category.copy(image = imageCategoryUrl)
 
                 val menuUpload = async {
-                    val result = firebaseFirestore.collection(MENU_COLLECTION).add(menuWithImages).await()
+                    val result =
+                        firebaseFirestore.collection(MENU_COLLECTION).add(menuWithImages).await()
                     val menuId = result.id
                     val menuWithId = menuWithImages.copy(id = menuId)
                     result.set(menuWithId).await()
                     menuWithId
                 }
                 val categoryUpload = async {
-                    val result = firebaseFirestore.collection(CATEGORY_COLLECTION).add(categoryWithImage).await()
+                    val result =
+                        firebaseFirestore.collection(CATEGORY_COLLECTION).add(categoryWithImage)
+                            .await()
                     val categoryId = result.id
                     val categoryWithId = categoryWithImage.copy(id = categoryId)
                     result.set(categoryWithId).await()
@@ -78,11 +88,13 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
             }
         }
     }
-    override suspend fun getReports(date:String): Flow<Resource<Reports?>> = flow {
+
+    override suspend fun getReports(date: String): Flow<Resource<Reports?>> = flow {
         emit(Resource.Loading())
 
         try {
-            val result = firebaseFirestore.collection(REPORT_COLLECTION).document(date).get().await()
+            val result =
+                firebaseFirestore.collection(REPORT_COLLECTION).document(date).get().await()
             val reports = result.toObject(Reports::class.java)
             if (reports != null) {
                 emit(Resource.Success(reports))
@@ -101,9 +113,9 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
         return flow {
             emit(Resource.Loading())
             try {
-                val adminId =  firebaseAuth.currentUser?.uid ?: ""
+                val adminId = firebaseAuth.currentUser?.uid ?: ""
                 val result = firebaseFirestore.collection(ORDER_COLLECTION)
-                    .whereEqualTo("adminId", adminId)
+                    .whereEqualTo("menu.adminId", adminId)
                     .get()
                     .await()
                 val orders = result.toObjects(Order::class.java)
@@ -112,6 +124,30 @@ class DefaultAdminRepositoryImplementation @Inject constructor(
                 } else {
                     emit(Resource.Success(emptyList()))
                 }
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    override suspend fun deleteOrder(order: Order): Flow<Resource<Order>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                firebaseFirestore.collection(ORDER_COLLECTION).document(order.id).delete().await()
+                emit(Resource.Success(order))
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    override suspend fun logOut(): Flow<Resource<Boolean>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                firebaseAuth.signOut()
+                emit(Resource.Success(true))
             } catch (e: Exception) {
                 emit(Resource.Error(e.message ?: "An error occurred"))
             }

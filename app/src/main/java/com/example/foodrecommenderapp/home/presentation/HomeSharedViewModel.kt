@@ -297,6 +297,10 @@ class HomeSharedViewModel @Inject constructor(
             is HomeScreenEvents.DeleteOrder -> {
                 deleteOrder(event.order)
             }
+
+            HomeScreenEvents.OnClickLogout -> {
+                logout()
+            }
         }
     }
 
@@ -591,6 +595,35 @@ class HomeSharedViewModel @Inject constructor(
                         ).also {
                             getOrder()
                         }
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun logout(){
+        viewModelScope.launch {
+            repository.logout().onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false
+                        )
+                        _uiEvent.send(UiEvent.NavigateToLoginScreen)
                     }
 
                     is Resource.Error -> {

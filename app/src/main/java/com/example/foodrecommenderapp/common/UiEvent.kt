@@ -6,5 +6,7 @@ sealed class UiEvent {
 
     object OnEmptyReports : UiEvent()
 
+    object NavigateToLoginScreen : UiEvent()
+
 
 }
