@@ -8,5 +8,7 @@ sealed class UiEvent {
 
     object NavigateToLoginScreen : UiEvent()
 
+    object LogoutFromAdmin : UiEvent()
+
 
 }

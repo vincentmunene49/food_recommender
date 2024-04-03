@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.foodrecommenderapp.admin.common.presentation.TabItem
 import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.navigation.Route
@@ -62,6 +63,10 @@ fun CommonHomeScreen(
             unselectedIcon = Icons.Outlined.ShoppingCart
         )
     )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
     var selectedIndex by remember {
         mutableIntStateOf(0)
     }
@@ -75,13 +80,16 @@ fun CommonHomeScreen(
         selectedIndex = pagerState.currentPage
     }
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(key1 = viewModel) {
         viewModel.uiEvent.collect {
             when (it) {
                 is UiEvent.NavigateToLoginScreen -> {
-                    navController.navigateUp()
-                    navController.popBackStack(Route.Content.route, inclusive = true)
-
+                    Timber.tag("CommonHomeScreen").d("Navigate to login screen")
+                    navController.navigate(route = Route.Login.route) {
+                        popUpTo(Route.Content.route) {
+                            inclusive = true
+                        }
+                    }
                 }
 
                 is UiEvent.OnNavigateToPreferenceScreen -> {
@@ -91,6 +99,7 @@ fun CommonHomeScreen(
                 else -> {}
             }
         }
+
     }
 
     Scaffold(

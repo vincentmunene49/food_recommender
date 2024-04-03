@@ -44,6 +44,7 @@ import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.navigation.Route
 import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -82,13 +83,16 @@ fun AdminScreen(
         selectedIndex = pagerState.currentPage
     }
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(key1 = viewModel) {
         viewModel.uiEvent.collect {
             when (it) {
-                is UiEvent.NavigateToLoginScreen -> {
-                    navController.navigateUp()
-                    navController.popBackStack(Route.AdminStart.route, inclusive = true)
-
+                is UiEvent.LogoutFromAdmin -> {
+                    Timber.tag("CommonHomeScreen").d("Navigate to login screen")
+                    navController.navigate(route = Route.Login.route) {
+                        popUpTo(Route.AdminStart.route) {
+                            inclusive = true
+                        }
+                    }
                 }
 
                 else -> {}
