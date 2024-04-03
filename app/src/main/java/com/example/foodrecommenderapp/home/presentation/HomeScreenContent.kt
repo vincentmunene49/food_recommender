@@ -81,6 +81,7 @@ import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import timber.log.Timber
 
 
 @Composable
@@ -105,19 +106,6 @@ fun HomeScreenContent(
     onEvent: (HomeScreenEvents) -> Unit = { },
     navController: NavController
 ) {
-
-    LaunchedEffect(key1 = true) {
-        uiEvent.collect { event ->
-            when (event) {
-                is UiEvent.OnSuccess -> {
-                    navController.navigate(route = Route.Preference.route)
-                }
-
-                else -> {}
-            }
-        }
-
-    }
 
     Scaffold(
         floatingActionButton = {

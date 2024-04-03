@@ -41,6 +41,7 @@ import com.example.foodrecommenderapp.common.UiEvent
 import com.example.foodrecommenderapp.navigation.Route
 import com.example.foodrecommenderapp.order.presentation.OrderScreen
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +74,7 @@ fun CommonHomeScreen(
     LaunchedEffect(pagerState.currentPage) {
         selectedIndex = pagerState.currentPage
     }
+
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect {
             when (it) {
@@ -82,34 +84,40 @@ fun CommonHomeScreen(
 
                 }
 
+                is UiEvent.OnNavigateToPreferenceScreen -> {
+                    navController.navigate(route = Route.Preference.route)
+                }
+
                 else -> {}
             }
         }
     }
 
-    Scaffold (
-    topBar = {
-        CenterAlignedTopAppBar(
-            title = { Text(
-                text = "Food Recommender",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimary
-            ) },
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            actions = {
-                IconButton(onClick = {viewModel.onEvent(HomeScreenEvents.OnClickLogout)  }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Logout,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Food Recommender",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                actions = {
+                    IconButton(onClick = { viewModel.onEvent(HomeScreenEvents.OnClickLogout) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Logout,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
-            }
-        )
-    }
-    ){paddingValues ->
+            )
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,7 +125,7 @@ fun CommonHomeScreen(
                 .padding(paddingValues)
         ) {
             TabRow(
-                modifier =  Modifier
+                modifier = Modifier
                     .padding(bottom = 8.dp),
                 selectedTabIndex = selectedIndex
             ) {
@@ -153,8 +161,7 @@ fun CommonHomeScreen(
             HorizontalPager(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
-                ,
+                    .fillMaxWidth(),
                 state = pagerState
             ) {
                 when (pagerState.currentPage) {
@@ -172,5 +179,4 @@ fun CommonHomeScreen(
     }
 
 
-    
 }

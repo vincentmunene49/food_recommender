@@ -449,9 +449,15 @@ class HomeSharedViewModel @Inject constructor(
                             isPreferencesLoading = false,
                             showPreferenceLoadingDialog = false,
                             meals = it.data?: emptyList()
-                        )
+                        ).also {
+
+                        }
                         Timber.tag("HomeViewModel").d("getMealByPreference: ${it.data}")
-                        _uiEvent.send(UiEvent.OnSuccess("Navigate to preference meal screen"))
+                        if(!it.data.isNullOrEmpty()){
+                            Timber.tag("HomeViewModel").d("getMealByPreference: Navigating")
+                            _uiEvent.send(UiEvent.OnNavigateToPreferenceScreen("Navigate to preference meal screen"))
+
+                        }
                     }
 
                     is Resource.Error -> {
