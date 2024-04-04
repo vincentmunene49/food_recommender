@@ -6,6 +6,8 @@ import com.example.foodrecommenderapp.common.Resource
 import com.example.foodrecommenderapp.common.constants.CATEGORY_COLLECTION
 import com.example.foodrecommenderapp.common.constants.MENU_COLLECTION
 import com.example.foodrecommenderapp.common.constants.ORDER_COLLECTION
+import com.example.foodrecommenderapp.common.constants.PREFERENCES_COLLECTION
+import com.example.foodrecommenderapp.home.data.model.Preferences
 import com.example.foodrecommenderapp.home.domain.HomeRepository
 import com.example.foodrecommenderapp.order.data.model.Order
 import com.google.firebase.auth.FirebaseAuth
@@ -166,6 +168,71 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
             try {
                 firebaseFirestore.collection(ORDER_COLLECTION).document(order.id).delete().await()
                 emit(Resource.Success(order))
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    override suspend fun savePreferences(preferences: Map<String, List<String?>>): Flow<Resource<Preferences>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                val user = firebaseAuth.currentUser
+                val userId = user?.uid ?: ""
+                val preferencesCollection = firebaseFirestore.collection(PREFERENCES_COLLECTION)
+                val existingPreferencesQuery = preferencesCollection
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+
+                if (existingPreferencesQuery.documents.isNotEmpty()) {
+                    // The preferences already exist, so we update them
+                    val existingPreferences = existingPreferencesQuery.documents[0].toObject(Preferences::class.java)
+                    if (existingPreferences != null) {
+                        val newPreferences = existingPreferences.copy(preferences = preferences)
+                        preferencesCollection.document(existingPreferencesQuery.documents[0].id).set(newPreferences).await()
+                        emit(Resource.Success(newPreferences))
+                    } else {
+                        emit(Resource.Error("An error occurred"))
+                    }
+                } else {
+                    // The preferences do not exist, so we add them
+                    val newPreferences = Preferences(userId = userId, preferences = preferences)
+                    val result = preferencesCollection.add(newPreferences).await()
+                    val preferencesId = result.id
+                    val preferencesWithId = newPreferences.copy(id = preferencesId)
+                    result.set(preferencesWithId).await()
+
+                    val savedPreferences = result.get().await().toObject(Preferences::class.java)
+                    if (savedPreferences != null) {
+                        emit(Resource.Success(savedPreferences))
+                    } else {
+                        emit(Resource.Error("An error occurred"))
+                    }
+                }
+            } catch (e: Exception) {
+                emit(Resource.Error(e.message ?: "An error occurred"))
+            }
+        }
+    }
+
+    override suspend fun getPreferences(): Flow<Resource<Preferences>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                val user = firebaseAuth.currentUser
+                val userId = user?.uid ?: ""
+                val result = firebaseFirestore.collection(PREFERENCES_COLLECTION)
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                val preferences = result.toObjects(Preferences::class.java)
+                if (preferences.isNotEmpty()) {
+                    emit(Resource.Success(preferences[0]))
+                } else {
+                    emit(Resource.Success(Preferences(userId = userId, preferences = emptyMap())))
+                }
             } catch (e: Exception) {
                 emit(Resource.Error(e.message ?: "An error occurred"))
             }

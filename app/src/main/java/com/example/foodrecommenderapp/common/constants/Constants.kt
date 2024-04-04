@@ -8,6 +8,8 @@ const val MENU_COLLECTION = "menu"
 
 const val ORDER_COLLECTION = "orders"
 
+const val PREFERENCES_COLLECTION = "preferences"
+
 const val CATEGORY_COLLECTION = "category"
 
 const val REPORT_COLLECTION = "reports"

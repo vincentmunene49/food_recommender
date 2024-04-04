@@ -37,7 +37,7 @@ class HomeSharedViewModel @Inject constructor(
     val uiEvent = _uiEvent.receiveAsFlow()
 
     init {
-        getMeals()
+        getPreferences()
         getMealCategories()
         getOrder()
     }
@@ -54,9 +54,9 @@ class HomeSharedViewModel @Inject constructor(
                 state = state.copy(
                     searchTerm = event.searchTerm
                 )
-                if(event.searchTerm.isNotEmpty() || event.searchTerm.isNotBlank()){
+                if (event.searchTerm.isNotEmpty() || event.searchTerm.isNotBlank()) {
                     getMealByFirstLetter(state.searchTerm)
-                }else{
+                } else {
                     getMeals()
                 }
             }
@@ -87,6 +87,7 @@ class HomeSharedViewModel @Inject constructor(
                 )
                 getMealByPreference().also {
                     saveReports()
+                    savePreferences()
                 }
             }
 
@@ -267,7 +268,7 @@ class HomeSharedViewModel @Inject constructor(
 
             }
 
-            is HomeScreenEvents.OnClickCategory ->{
+            is HomeScreenEvents.OnClickCategory -> {
                 state = state.copy(
                     selectedCategory = event.categoryName
                 )
@@ -287,6 +288,7 @@ class HomeSharedViewModel @Inject constructor(
                     showAddToOrderDialog = false
                 )
             }
+
             HomeScreenEvents.OnClickConfirmAddToOrder -> {
                 addOrder()
                 state = state.copy(
@@ -338,7 +340,7 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
-    private fun getMealByCategories(category:String){
+    private fun getMealByCategories(category: String) {
         viewModelScope.launch {
             repository.getMealsByCategory(category.lowercase()).onEach {
                 when (it) {
@@ -403,7 +405,7 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
-    private fun getMeals(){
+    fun getMeals() {
         viewModelScope.launch {
             repository.getMeals().onEach {
                 when (it) {
@@ -434,6 +436,7 @@ class HomeSharedViewModel @Inject constructor(
             }.launchIn(this)
         }
     }
+
     private fun getMealByPreference() {
         viewModelScope.launch {
             preferenceRepository.getMealByPreferences(
@@ -448,10 +451,58 @@ class HomeSharedViewModel @Inject constructor(
                         state = state.copy(
                             isPreferencesLoading = false,
                             showPreferenceLoadingDialog = false,
-                            meals = it.data?: emptyList()
+                            meals = it.data ?: emptyList()
                         )
                         Timber.tag("HomeViewModel").d("getMealByPreference: ${it.data}")
-                        _uiEvent.send(UiEvent.OnSuccess("Navigate to preference meal screen"))
+                        if (!it.data.isNullOrEmpty()) {
+                            Timber.tag("HomeViewModel").d("getMealByPreference: Navigating")
+                            _uiEvent.send(UiEvent.OnNavigateToPreferenceScreen("Navigate to preference meal screen"))
+
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isPreferencesLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true,
+                            showPreferenceLoadingDialog = false
+                        )
+                        Timber.tag("HomeViewModel").d("getMealByPreferenceError: ${it.message}")
+
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isPreferencesLoading = true,
+                            showPreferenceLoadingDialog = true
+                        )
+                        Timber.tag("HomeViewModel").d("getMealByPreference: loading...")
+                    }
+                }
+            }.launchIn(
+                this
+            )
+        }
+    }
+
+    private fun getMealsFromPreferenceAndNoNavigation() {
+        viewModelScope.launch {
+            preferenceRepository.getMealByPreferences(
+                cuisineType = state.selectedCousineListPreferences,
+                diet = state.selectedDietListPreferences,
+                dishType = state.selectedDishTypePreferences,
+                health = state.selectedHealthListPreferences,
+                mealType = state.selectedMealTypePreferences
+            ).onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isPreferencesLoading = false,
+                            showPreferenceLoadingDialog = false,
+                            meals = it.data ?: emptyList()
+                        )
+                        Timber.tag("HomeViewModel").d("getMealByPreference: ${it.data}")
                     }
 
                     is Resource.Error -> {
@@ -480,17 +531,19 @@ class HomeSharedViewModel @Inject constructor(
     }
 
     private fun saveReports() {
-        val reports = Reports(
-            date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()),
-            preferences = mapOf(
-                "cuisineType" to state.selectedCousineListPreferences.groupingBy { it }.eachCount(),
-                "diet" to state.selectedDietListPreferences.groupingBy { it }.eachCount(),
-                "dishType" to state.selectedDishTypePreferences.groupingBy { it }.eachCount(),
-                "health" to state.selectedHealthListPreferences.groupingBy { it }.eachCount(),
-                "mealType" to state.selectedMealTypePreferences.groupingBy { it }.eachCount()
-            ),
-            totalSearches = state.totalSearches
-        )
+        val reports = mapOf(
+            "cuisineType" to state.selectedCousineListPreferences.groupingBy { it }.eachCount(),
+            "diet" to state.selectedDietListPreferences.groupingBy { it }.eachCount(),
+            "dishType" to state.selectedDishTypePreferences.groupingBy { it }.eachCount(),
+            "health" to state.selectedHealthListPreferences.groupingBy { it }.eachCount(),
+            "mealType" to state.selectedMealTypePreferences.groupingBy { it }.eachCount()
+        ).let {
+            Reports(
+                date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()),
+                preferences = it,
+                totalSearches = state.totalSearches
+            )
+        }
         viewModelScope.launch {
             preferenceRepository.saveReports(
                 reports
@@ -552,7 +605,7 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
-    private fun getOrder(){
+    private fun getOrder() {
         viewModelScope.launch {
             repository.getOrders().onEach {
                 when (it) {
@@ -585,7 +638,7 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
-    private fun deleteOrder(order: Order){
+    private fun deleteOrder(order: Order) {
         viewModelScope.launch {
             repository.deleteOrder(order).onEach {
                 when (it) {
@@ -615,7 +668,94 @@ class HomeSharedViewModel @Inject constructor(
         }
     }
 
-    private fun logout(){
+    private fun savePreferences() {
+        viewModelScope.launch {
+            repository.savePreferences(
+                mapOf(
+                    "cuisineType" to state.selectedCousineListPreferences,
+                    "diet" to state.selectedDietListPreferences,
+                    "dishType" to state.selectedDishTypePreferences,
+                    "health" to state.selectedHealthListPreferences,
+                    "mealType" to state.selectedMealTypePreferences
+                )
+            ).onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        state = state.copy(
+                            isLoading = false,
+                            userPreferences = it.data?.preferences ?: emptyMap()
+                        )
+                    }
+
+                    is Resource.Error -> {
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun getPreferences() {
+        viewModelScope.launch {
+            repository.getPreferences().onEach {
+                when (it) {
+                    is Resource.Success -> {
+                        Timber.tag("HomeViewModel").d("userPreferences: ${it.data?.preferences}")
+                        state = state.copy(
+                            isLoading = false,
+                            userPreferences = it.data?.preferences ?: emptyMap(),
+                            selectedCousineListPreferences = it.data?.preferences?.get("cuisineType")
+                                ?: emptyList(),
+                            selectedDietListPreferences = it.data?.preferences?.get("diet")
+                                ?: emptyList(),
+                            selectedDishTypePreferences = it.data?.preferences?.get("dishType")
+                                ?: emptyList(),
+                            selectedHealthListPreferences = it.data?.preferences?.get("health")
+                                ?: emptyList(),
+                            selectedMealTypePreferences = it.data?.preferences?.get("mealType")
+                                ?: emptyList()
+                        )
+                        if (state.userPreferences.values.any { value ->
+                                value.isNotEmpty()
+                            }) {
+                            getMealsFromPreferenceAndNoNavigation()
+
+                        } else {
+                            getMeals()
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        Timber.tag("HomeViewModel").d("userPreferencesError: ${it.message}")
+
+                        state = state.copy(
+                            isLoading = false,
+                            error = it.message ?: "An unexpected error occurred",
+                            showErrorDialog = true
+                        )
+                    }
+
+                    is Resource.Loading -> {
+                        state = state.copy(
+                            isLoading = true
+                        )
+                    }
+                }
+            }.launchIn(this)
+        }
+    }
+
+    private fun logout() {
         viewModelScope.launch {
             repository.logout().onEach {
                 when (it) {
@@ -623,7 +763,9 @@ class HomeSharedViewModel @Inject constructor(
                         state = state.copy(
                             isLoading = false
                         )
+                        Timber.tag("HomeViewModel").d("logout Event")
                         _uiEvent.send(UiEvent.NavigateToLoginScreen)
+
                     }
 
                     is Resource.Error -> {

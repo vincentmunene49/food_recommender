@@ -487,7 +487,7 @@ class AdminSharedViewModel @Inject constructor(
                         state = state.copy(
                             isLoading = false
                         )
-                        _uiEvent.send(UiEvent.NavigateToLoginScreen)
+                        _uiEvent.send(UiEvent.LogoutFromAdmin)
                     }
 
                     is Resource.Error -> {

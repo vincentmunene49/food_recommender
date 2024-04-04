@@ -81,6 +81,7 @@ import com.example.foodrecommenderapp.ui.theme.FoodRecommenderAppTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import timber.log.Timber
 
 
 @Composable
@@ -105,19 +106,6 @@ fun HomeScreenContent(
     onEvent: (HomeScreenEvents) -> Unit = { },
     navController: NavController
 ) {
-
-    LaunchedEffect(key1 = true) {
-        uiEvent.collect { event ->
-            when (event) {
-                is UiEvent.OnSuccess -> {
-                    navController.navigate(route = Route.Preference.route)
-                }
-
-                else -> {}
-            }
-        }
-
-    }
 
     Scaffold(
         floatingActionButton = {
@@ -497,11 +485,11 @@ fun PreferencesComponent(
     onClickCuisineDoneAction: () -> Unit,
     onClickDishTypeDoneAction: () -> Unit,
     onClickMealTypeDoneAction: () -> Unit,
-    selectedHealthList: List<String>,
-    selectedDietList: List<String>,
-    selectedCuisineList: List<String>,
-    selectedDishTypeList: List<String>,
-    selectedMealTypeList: List<String>,
+    selectedHealthList: List<String?>,
+    selectedDietList: List<String?>,
+    selectedCuisineList: List<String?>,
+    selectedDishTypeList: List<String?>,
+    selectedMealTypeList: List<String?>,
     onSelectHealthMenuItem: (String) -> Unit,
     onDeselectHealthMenuItem: (String) -> Unit,
     onSelectDietMenuItem: (String) -> Unit,
@@ -677,7 +665,7 @@ fun LoadingComponent(
 fun DropDownMenu(
     modifier: Modifier = Modifier,
     menuItems: List<String>,
-    selectedItems: List<String>?,
+    selectedItems: List<String?>?,
     onSelectMenuItem: (String) -> Unit,
     onDeselectMenuItem: (String) -> Unit,
     onClickDone: () -> Unit,

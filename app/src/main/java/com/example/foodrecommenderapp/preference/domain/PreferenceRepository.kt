@@ -8,15 +8,15 @@ import kotlinx.coroutines.flow.Flow
 interface PreferenceRepository {
 
     suspend fun getMealByPreferences(
-        health: List<String>,
-        diet: List<String>,
-        cuisineType: List<String>,
-        mealType: List<String>,
-        dishType: List<String>
+        health: List<String?>?,
+        diet: List<String?>?,
+        cuisineType: List<String?>?,
+        mealType: List<String?>?,
+        dishType: List<String?>?
     ): Flow<Resource<List<Menu>>>
 
     suspend fun saveReports(
-        reports: Reports
+        reports: Reports?
     ): Flow<Resource<Unit>>
 
 
