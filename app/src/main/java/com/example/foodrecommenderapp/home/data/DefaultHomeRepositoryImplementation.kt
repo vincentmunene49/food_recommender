@@ -53,8 +53,19 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
             try {
                 val result = firebaseFirestore.collection(CATEGORY_COLLECTION).get().await()
                 val categories = result.toObjects(Category::class.java)
-                if (categories.isNotEmpty()) {
-                    emit(Resource.Success(categories))
+                val distinctCategories =
+                    categories.toCollection(object : LinkedHashSet<Category>() {
+                        override fun contains(element: Category): Boolean {
+                            return any { it.name == element.name }
+                        }
+
+                        override fun add(element: Category): Boolean {
+                            if (contains(element)) return false
+                            return super.add(element)
+                        }
+                    }).toList()
+                if (distinctCategories.isNotEmpty()) {
+                    emit(Resource.Success(distinctCategories))
                 } else {
                     emit(Resource.Success(emptyList()))
                 }
@@ -85,8 +96,9 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
         return flow {
             emit(Resource.Loading())
             try {
-                val result = firebaseFirestore.collection(MENU_COLLECTION).whereEqualTo("category", category)
-                    .get().await()
+                val result =
+                    firebaseFirestore.collection(MENU_COLLECTION).whereEqualTo("category", category)
+                        .get().await()
                 val meals = result.toObjects(Menu::class.java)
                 if (meals.isNotEmpty()) {
                     emit(Resource.Success(meals))
@@ -120,7 +132,10 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
                     if (existingOrder != null) {
                         val newQuantity = existingOrder.quantity + order.quantity
                         val newPrice = existingOrder.menu.price?.times(newQuantity)
-                        val newOrder = existingOrder.copy(quantity = newQuantity, menu = existingOrder.menu.copy(price = newPrice))
+                        val newOrder = existingOrder.copy(
+                            quantity = newQuantity,
+                            menu = existingOrder.menu.copy(price = newPrice)
+                        )
                         orderCollection.document(existingOrder.id).set(newOrder).await()
                         emit(Resource.Success(newOrder))
                     } else {
@@ -145,6 +160,7 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
             }
         }
     }
+
     override suspend fun getOrders(): Flow<Resource<List<Order>>> {
         return flow {
             emit(Resource.Loading())
@@ -188,10 +204,12 @@ class DefaultHomeRepositoryImplementation @Inject constructor(
 
                 if (existingPreferencesQuery.documents.isNotEmpty()) {
                     // The preferences already exist, so we update them
-                    val existingPreferences = existingPreferencesQuery.documents[0].toObject(Preferences::class.java)
+                    val existingPreferences =
+                        existingPreferencesQuery.documents[0].toObject(Preferences::class.java)
                     if (existingPreferences != null) {
                         val newPreferences = existingPreferences.copy(preferences = preferences)
-                        preferencesCollection.document(existingPreferencesQuery.documents[0].id).set(newPreferences).await()
+                        preferencesCollection.document(existingPreferencesQuery.documents[0].id)
+                            .set(newPreferences).await()
                         emit(Resource.Success(newPreferences))
                     } else {
                         emit(Resource.Error("An error occurred"))

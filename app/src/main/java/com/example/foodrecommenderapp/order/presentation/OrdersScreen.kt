@@ -117,8 +117,8 @@ private fun OrderComponent(
             modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
             onClickFood = { /*TODO*/ },
             imagePath = meal.image ?: "",
-            foodTitle = meal.name,
-            foodCategory = meal.category,
+            foodTitle = meal.name.split(" ").take(2).joinToString(" "),
+            foodCategory = meal.category.split(" ").take(2).joinToString(" "),
             price = meal.price.toString()
         )
         Column(
